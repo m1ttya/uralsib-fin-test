@@ -51,18 +51,18 @@ export default function TestPlayer({ test }: Props) {
   }
 
   return (
-    <div className="w-full max-w-2xl px-6">
+    <div className="w-full max-w-2xl px-4 sm:px-6">
       {/* Карточка с вопросом */}
         <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="bg-white rounded-3xl shadow-lg p-6 relative"
+        className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 relative"
         >
         {/* Логотип в верхнем левом углу карточки */}
         <div className="absolute top-4 left-6">
             <img 
-            src="/uralsib-logo.svg" 
+            src="./uralsib-logo.svg" 
             alt="Банк Уралсиб" 
             className="h-9 w-auto"
             />
