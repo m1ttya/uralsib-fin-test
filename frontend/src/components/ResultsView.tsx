@@ -30,7 +30,7 @@ export default function ResultsView({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="bg-white rounded-3xl shadow-lg p-5 sm:p-10 relative"
+        className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 relative"
       >
         {/* Логотип в верхнем левом углу */}
         <div className="absolute top-4 left-6">
