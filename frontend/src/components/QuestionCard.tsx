@@ -51,7 +51,7 @@ export default function QuestionCard({
               whileTap={{ scale: 0.98 }}
               onClick={() => !showFeedback && onOptionSelect(idx)}
               disabled={showFeedback}
-              className={`w-full text-left py-4 px-5 sm:py-4 sm:px-5 rounded-xl border ${bgColor} ${textColor} transition-colors ring-2 ${ringColor} hover:bg-opacity-90 font-medium text-base sm:text-lg`}
+              className={`w-full text-left py-2.5 px-4 sm:py-4 sm:px-5 rounded-xl border ${bgColor} ${textColor} transition-colors ring-2 ${ringColor} hover:bg-opacity-90 font-medium text-base sm:text-lg`}
             >
               {option}
             </motion.button>
