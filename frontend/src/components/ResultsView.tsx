@@ -26,7 +26,7 @@ export default function ResultsView({
   const score = Math.round((correctCount / test.questions.length) * 100);
 
   return (
-    <div className="w-full max-w-2xl px-2 sm:px-6"> {/* ← Карточка пошире */}
+    <div className="w-full max-w-3xl px-2 sm:px-6"> {/* ← Карточка пошире */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
