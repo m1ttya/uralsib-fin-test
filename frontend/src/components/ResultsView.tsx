@@ -26,11 +26,11 @@ export default function ResultsView({
   const score = Math.round((correctCount / test.questions.length) * 100);
 
   return (
-    <div className="w-full max-w-3xl px-2 sm:px-6"> {/* ← Карточка пошире */}
+    <div className="w-full max-w-4xl px-2 sm:px-4"> {/* ← Карточка пошире */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="bg-white rounded-3xl shadow-lg p-4 sm:p-8 relative"
+        className="bg-white rounded-3xl shadow-lg p-5 sm:p-10 relative"
       >
         {/* Логотип в верхнем левом углу */}
         <div className="absolute top-4 left-6">
@@ -44,10 +44,10 @@ export default function ResultsView({
         <div className="mt-10">
           {/* Заголовок и процент в одной строке */}
           <div className="flex items-start gap-4 mb-4">
-            <h2 className="text-xl font-bold text-primary mt-1">Ваш результат: {score}%</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-primary mt-1">Ваш результат: {score}%</h2>
           </div>
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-base sm:text-lg text-gray-600 mb-6">
             Правильных ответов: {correctCount} из {test.questions.length}
           </p>
 
