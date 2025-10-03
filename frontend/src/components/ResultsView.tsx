@@ -1,5 +1,4 @@
 // frontend/src/components/ResultsView.tsx
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Test } from '../data/mockTests';
 

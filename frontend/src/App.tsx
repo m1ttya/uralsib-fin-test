@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
 import CategorySelection from './components/CategorySelection';
@@ -51,9 +51,6 @@ function App() {
     return mockTests.find(test => test.category === 'adults');
   };
 
-  const handleTestComplete = () => {
-    setAppState('results');
-  };
 
   const renderCurrentState = () => {
     switch (appState) {
