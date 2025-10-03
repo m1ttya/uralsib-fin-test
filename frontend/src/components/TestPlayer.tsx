@@ -1,5 +1,5 @@
 // frontend/src/components/TestPlayer.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import QuestionCard from './QuestionCard';
 import ResultsView from './ResultsView';
@@ -7,35 +7,38 @@ import { Test } from '../data/mockTests';
 
 type Props = {
   test: Test;
+  onRestart?: () => void;
 };
 
-export default function TestPlayer({ test }: Props) {
+export default function TestPlayer({ test, onRestart }: Props) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(Array(test.questions.length).fill(null));
   const [showResults, setShowResults] = useState(false);
-  const [userData, setUserData] = useState({ fullName: '', email: '' });
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
   const currentQuestion = test.questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex) / test.questions.length) * 100;
 
   const handleOptionSelect = (index: number) => {
-    const newAnswers = [...answers];
-    newAnswers[currentQuestionIndex] = index;
-    setAnswers(newAnswers);
+    setSelectedOption(index);
+    setShowFeedback(true);
+  };
 
-    setTimeout(() => {
+  const handleNext = () => {
+    if (selectedOption !== null) {
+      const newAnswers = [...answers];
+      newAnswers[currentQuestionIndex] = selectedOption;
+      setAnswers(newAnswers);
+
       if (currentQuestionIndex < test.questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
+        setSelectedOption(null);
+        setShowFeedback(false);
       } else {
         setShowResults(true);
       }
-    }, 300);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Отправка результатов:', { testId: test.id, answers, userData });
-    alert('Результаты отправлены! Спасибо.');
+    }
   };
 
   if (showResults) {
@@ -43,55 +46,64 @@ export default function TestPlayer({ test }: Props) {
       <ResultsView
         test={test}
         answers={answers}
-        userData={userData}
-        onUserDataChange={setUserData}
-        onSubmit={handleSubmit}
+        onRestart={onRestart}
       />
     );
   }
 
   return (
-    <div className="w-full max-w-6xl px-2 sm:px-6">
-      {/* Карточка с вопросом */}
-        <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="bg-white rounded-3xl shadow-lg p-5 sm:p-6 relative"
-        >
-        {/* Логотип в верхнем левом углу карточки */}
-        <div className="absolute top-4 left-6">
+            <div className="modal-overlay">
+              <div className="test-modal-paper w-full flex flex-col">
+        {/* Логотип в верхней части - БЕЗ анимации */}
+        <div className="flex justify-center py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8">
             <img 
-            src="./uralsib-logo.svg" 
+            src="./uralsib_logo.svg" 
             alt="Банк Уралсиб" 
-            className="h-9 w-auto"
+            className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto"
             />
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6 mt-12">
+        {/* Progress bar - на всю ширину модального окна, без отступов */}
+        <div className="w-full bg-gray-200 h-2.5 mb-6 progress-bar-container" style={{ marginLeft: 0, marginRight: 0 }}>
             <motion.div
-            className="bg-primary h-2.5 rounded-full"
+            className="bg-primary h-2.5"
             initial={{ width: '0%' }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             />
         </div>
 
-        <p className="text-sm text-gray-500 mb-6">
+        {/* Счетчик вопросов - БЕЗ анимации */}
+        <p className="text-sm sm:text-base md:text-lg text-gray-500 mb-6 sm:mb-8 text-center px-4 sm:px-6 md:px-8 premium-text">
             Вопрос {currentQuestionIndex + 1} из {test.questions.length}
         </p>
 
+        {/* Контент с анимацией - только для вопросов */}
+        <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="relative flex flex-col h-full"
+        >
+
+        <div className="flex-1 px-4 sm:px-6 md:px-8 pb-4 sm:pb-6 md:pb-8">
         <AnimatePresence mode="wait">
             <QuestionCard
             key={currentQuestionIndex}
             question={currentQuestion.text}
             options={currentQuestion.options}
-            selectedOption={answers[currentQuestionIndex]}
+            selectedOption={selectedOption}
             onOptionSelect={handleOptionSelect}
+            showFeedback={showFeedback}
+            correctIndex={currentQuestion.correctIndex}
+            onNext={handleNext}
+            canProceed={selectedOption !== null}
             />
         </AnimatePresence>
-        </motion.div>
-    </div>
-  );
-}
+        </div>
+                
+                </motion.div>
+              </div>
+            </div>
+          );
+        }

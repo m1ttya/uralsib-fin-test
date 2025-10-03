@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/uralsib-fin-test/',
   server: {
+    host: '0.0.0.0',
     open: true,
     port: 5173
   }

@@ -1,6 +1,604 @@
 /* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Убираем прокрутку для модальных окон, но разрешаем для лендинга */
+html, body {
+  overflow: hidden;
+  height: 100vh;
+}
+
+#root {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Разрешаем прокрутку для лендинга */
+.landing-page {
+  overflow-y: auto !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+/* Убираем все CSS правила для кнопки - используем только inline стили */
+
+/* Скрываем скроллбар в окнах */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Стили модальных окон */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-paper {
+  width: 400px;
+  padding: 0;
+  background-color: white;
+  border-radius: 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-paper::-webkit-scrollbar {
+  display: none;
+}
+
+/* Увеличение масштаба для мобильных */
+@media (max-width: 475px) {
+  html {
+    font-size: 18px;
+  }
+  
+  body {
+    overflow: hidden !important;
+  }
+  
+  html {
+    overflow: hidden !important;
+  }
+  
+  #root {
+    overflow: hidden !important;
+  }
+  
+  .fixed.inset-0 {
+    overflow: hidden !important;
+  }
+  
+  .modal-overlay {
+    overflow: hidden !important;
+  }
+  
+  .modal-paper {
+    overflow: hidden !important;
+  }
+  
+  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 {
+    overflow: hidden !important;
+  }
+  
+  .modal-overlay {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  
+  /* Логин модал на весь экран для мобильных */
+  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 {
+    padding: 0 !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+  
+  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding: 20px !important;
+    padding-top: 40px !important;
+  }
+}
+
+/* Адаптивные брейкпоинты */
+@media (max-width: 475px) {
+  .modal-paper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 20px 0 12px 0;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+}
+
+@media (max-width: 640px) and (min-width: 476px) {
+  .modal-paper {
+    margin: 1.5rem 0.75rem;
+    padding: 20px 0 16px 0;
+    max-height: calc(100vh - 3rem);
+  }
+}
+
+@media (max-width: 767px) and (min-width: 476px) {
+  .modal-paper {
+    margin: 2rem 1rem;
+    padding: 24px 0 20px 0;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .modal-paper {
+    width: 88%;
+    max-width: 400px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1279px) {
+  .modal-paper {
+    width: 75%;
+    max-width: 450px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .modal-paper {
+    width: 55%;
+    max-width: 500px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+/* Специальные стили для окна выбора категорий */
+.category-modal-paper {
+  width: 500px;
+  padding: 0;
+  background-color: white;
+  border-radius: 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.category-modal-paper::-webkit-scrollbar {
+  display: none;
+}
+
+/* Адаптивные стили для окна выбора категорий */
+@media (max-width: 475px) {
+  .category-modal-paper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 20px 0 12px 0;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .category-modal-paper {
+    margin: 1.5rem 0.75rem;
+    padding: 20px 0 16px 0;
+    max-height: calc(100vh - 3rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .category-modal-paper {
+    margin: 2rem 1rem;
+    padding: 24px 0 20px 0;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .category-modal-paper {
+    width: 95%;
+    max-width: 500px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1279px) {
+  .category-modal-paper {
+    width: 85%;
+    max-width: 600px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .category-modal-paper {
+    width: 70%;
+    max-width: 700px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+/* Специальные стили для окна теста */
+.test-modal-paper {
+  width: 600px;
+  padding: 0;
+  background-color: white;
+  border-radius: 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.test-modal-paper::-webkit-scrollbar {
+  display: none;
+}
+
+/* Прогресс-бар для окна теста - от края до края */
+.test-modal-paper .progress-bar-container {
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Адаптивные стили для окна теста */
+@media (max-width: 475px) {
+  .test-modal-paper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 20px 0 12px 0;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .test-modal-paper {
+    margin: 1.5rem 0.75rem;
+    padding: 20px 0 16px 0;
+    max-height: calc(100vh - 3rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .test-modal-paper {
+    margin: 2rem 1rem;
+    padding: 24px 0 20px 0;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .test-modal-paper {
+    width: 95%;
+    max-width: 600px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1279px) {
+  .test-modal-paper {
+    width: 90%;
+    max-width: 700px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .test-modal-paper {
+    width: 80%;
+    max-width: 800px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+/* Специальные стили для окна выбора возрастной группы */
+.age-group-modal-paper {
+  width: 500px;
+  padding: 0;
+  background-color: white;
+  border-radius: 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.age-group-modal-paper::-webkit-scrollbar {
+  display: none;
+}
+
+/* Адаптивные стили для окна выбора возрастной группы */
+@media (max-width: 475px) {
+  .age-group-modal-paper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 20px 0 12px 0;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .age-group-modal-paper {
+    margin: 1.5rem 0.75rem;
+    padding: 20px 0 16px 0;
+    max-height: calc(100vh - 3rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .age-group-modal-paper {
+    margin: 2rem 1rem;
+    padding: 24px 0 20px 0;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .age-group-modal-paper {
+    width: 95%;
+    max-width: 500px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (max-width: 1279px) {
+  .age-group-modal-paper {
+    width: 85%;
+    max-width: 600px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .age-group-modal-paper {
+    width: 70%;
+    max-width: 700px;
+    margin: 2rem 1rem;
+    max-height: calc(100vh - 4rem);
+  }
+}
+
+/* Кастомная анимация для переливающегося свечения */
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(1.15);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2);
+  }
+  75% {
+    opacity: 0.7;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes glow-rotate {
+  0% {
+    transform: scale(1.25) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.3) rotate(180deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.25) rotate(360deg);
+    opacity: 0.2;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes gentle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes gentle-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+@keyframes gentle-glow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(100, 64, 191, 0);
+  }
+  50% { 
+    box-shadow: 0 0 20px 5px rgba(100, 64, 191, 0.3);
+  }
+}
+
+.glow-animation {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.glow-rotate {
+  animation: glow-rotate 6s linear infinite;
+}
+
+/* Премиальная типографика */
+.premium-heading {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Визуально сбалансированные отступы */
+.visual-spacing {
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .visual-spacing {
+    --spacing-sm: 1.25rem;
+    --spacing-md: 1.75rem;
+    --spacing-lg: 2.25rem;
+    --spacing-xl: 3rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .visual-spacing {
+    --spacing-sm: 1.5rem;
+    --spacing-md: 2rem;
+    --spacing-lg: 2.5rem;
+    --spacing-xl: 3.5rem;
+  }
+}
+
+.premium-button {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.premium-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 /* Не добавляйте font-family здесь — Tailwind сделает это сам */
