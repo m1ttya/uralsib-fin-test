@@ -32,12 +32,6 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
     }, 200);
   };
 
-  const handleLogin = () => {
-    if (isChecked) {
-      alert('Авторизация через банк пока в разработке');
-      // Не перекидываем к категориям, остаемся в модальном окне
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -95,7 +89,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
 
             {/* Кнопка входа */}
             <button
-              onClick={handleLogin}
+              onClick={onLogin}
               disabled={!isChecked}
               className={`w-full py-3 px-4 rounded-3xl premium-button transition-all duration-300 text-white ${
                 isChecked 

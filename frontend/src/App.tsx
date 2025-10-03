@@ -17,7 +17,8 @@ function App() {
   };
 
   const handleLogin = () => {
-    setAppState('categories');
+    alert('Авторизация через банк пока в разработке');
+    // Не перекидываем к категориям, остаемся в модальном окне
   };
 
   const handleSkip = () => {
