@@ -49,7 +49,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="rounded-2xl p-8 max-w-sm w-full relative"
+            className="rounded-2xl p-6 sm:p-8 max-w-sm w-full relative"
             style={{ backgroundColor: '#252030' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -64,16 +64,16 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
             </button>
 
             {/* Логотип Уралсиб */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4 sm:mb-6">
               <img 
                 src="./uralsib_logo_square_white.svg"
                 alt="Банк Уралсиб" 
-                className="w-32 h-32"
+                className="w-32 h-32 sm:w-32 sm:h-32"
               />
             </div>
 
             {/* Заголовок */}
-            <h2 className="text-2xl text-white text-center mb-4" style={{
+            <h2 className="text-xl sm:text-2xl text-white text-center mb-3 sm:mb-4" style={{
               fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
               fontWeight: '700',
               letterSpacing: '-0.02em',
@@ -83,7 +83,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
             </h2>
 
             {/* Описание */}
-            <p className="text-white text-center mb-8 text-sm premium-text">
+            <p className="text-white text-center mb-6 sm:mb-8 text-xs sm:text-sm premium-text">
               Получайте бонусы и кэшбэк за прохождение тестов и развитие финансовой грамотности
             </p>
 
@@ -91,7 +91,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
             <button
               onClick={onLogin}
               disabled={!isChecked}
-              className={`w-full py-3 px-4 rounded-3xl premium-button transition-all duration-300 text-white ${
+              className={`w-full py-2.5 sm:py-3 px-4 rounded-3xl premium-button transition-all duration-300 text-white text-sm sm:text-base ${
                 isChecked 
                   ? 'bg-button-login hover:bg-button-login-hover ring-2 ring-button-login/30' 
                   : 'bg-button-login opacity-50'
@@ -103,13 +103,13 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
             {/* Кнопка пропустить */}
             <button
               onClick={handleSkip}
-              className="w-full py-3 rounded-3xl premium-button text-white bg-button-skip hover:bg-button-skip-hover transition-all duration-300 mt-3"
+              className="w-full py-2.5 sm:py-3 rounded-3xl premium-button text-white bg-button-skip hover:bg-button-skip-hover transition-all duration-300 mt-2 sm:mt-3 text-sm sm:text-base"
             >
               Пропустить
             </button>
 
             {/* Чекбокс согласия */}
-            <div className="flex items-start mt-6">
+            <div className="flex items-start mt-4 sm:mt-6">
               <input
                 type="checkbox"
                 id="consent"
@@ -117,7 +117,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
                 onChange={(e) => setIsChecked(e.target.checked)}
                 className="mt-1 mr-3"
               />
-              <label htmlFor="consent" className="text-gray-400 text-xs premium-text">
+              <label htmlFor="consent" className="text-gray-400 text-xs sm:text-xs premium-text">
                 Я принимаю{' '}
                 <a href="#" className="underline hover:text-gray-300">
                   условия использования сайта

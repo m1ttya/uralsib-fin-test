@@ -18,7 +18,7 @@ export default function TestPlayer({ test, onRestart }: Props) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
   const currentQuestion = test.questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex) / test.questions.length) * 100;
+  const progress = ((currentQuestionIndex + 1) / test.questions.length) * 100;
 
   const handleOptionSelect = (index: number) => {
     setSelectedOption(index);
@@ -64,7 +64,7 @@ export default function TestPlayer({ test, onRestart }: Props) {
         </div>
 
         {/* Progress bar - на всю ширину модального окна, без отступов */}
-        <div className="w-full bg-gray-200 h-2.5 mb-6 progress-bar-container" style={{ marginLeft: 0, marginRight: 0 }}>
+        <div className="w-full bg-gray-200 h-2.5 mb-7 progress-bar-container relative z-20" style={{ marginLeft: 0, marginRight: 0 }}>
             <motion.div
             className="bg-primary h-2.5"
             initial={{ width: '0%' }}

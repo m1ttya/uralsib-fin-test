@@ -1,0 +1,25 @@
+{
+  "name": "uralsib-fin-test-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "nodemon": "^3.0.2",
+    "ts-node": "^10.9.2",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.4.2"
+  }
+}
+

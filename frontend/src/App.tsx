@@ -1,16 +1,13 @@
 import { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
-import CategorySelection from './components/CategorySelection';
-import TestPlayer from './components/TestPlayer';
+import TestFlow from './components/TestFlow';
 import { mockTests } from './data/mockTests';
 
-type AppState = 'landing' | 'login' | 'categories' | 'test' | 'results';
+type AppState = 'landing' | 'login' | 'test-flow';
 
 function App() {
   const [appState, setAppState] = useState<AppState>('landing');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState<string>('');
 
   const handleStartTest = () => {
     setAppState('login');
@@ -23,33 +20,16 @@ function App() {
 
   const handleSkip = () => {
     // Сначала закрываем модальное окно входа плавно
-    // Затем сразу переходим к категориям без задержки
-    setAppState('categories');
+    // Затем сразу переходим к тесту без задержки
+    setAppState('test-flow');
   };
 
   const handleCloseLogin = () => {
     setAppState('landing');
   };
 
-  const handleCategorySelect = (category: string, ageGroup?: string) => {
-    setSelectedCategory(category);
-    if (ageGroup) {
-      setSelectedAgeGroup(ageGroup);
-    }
-    setAppState('test');
-  };
-
-  // Функция для получения правильного теста
-  const getSelectedTest = () => {
-    if (selectedCategory === 'school' && selectedAgeGroup) {
-      return mockTests.find(test => test.category === 'school' && test.ageGroup === selectedAgeGroup);
-    } else if (selectedCategory === 'adults') {
-      return mockTests.find(test => test.category === 'adults');
-    } else if (selectedCategory === 'seniors') {
-      return mockTests.find(test => test.category === 'seniors');
-    }
-    // Fallback на тест для взрослых
-    return mockTests.find(test => test.category === 'adults');
+  const handleRestart = () => {
+    setAppState('landing');
   };
 
 
@@ -71,14 +51,8 @@ function App() {
           </>
         );
       
-      case 'categories':
-        return <CategorySelection onCategorySelect={handleCategorySelect} />;
-      
-      case 'test':
-        return <TestPlayer test={getSelectedTest() || mockTests[0]} onRestart={() => setAppState('landing')} />;
-      
-      case 'results':
-        return <TestPlayer test={getSelectedTest() || mockTests[0]} onRestart={() => setAppState('landing')} />;
+      case 'test-flow':
+        return <TestFlow tests={mockTests} onRestart={handleRestart} />;
       
       default:
         return <LandingPage onStartTest={handleStartTest} />;

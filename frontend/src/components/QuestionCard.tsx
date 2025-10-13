@@ -8,6 +8,7 @@ type Props = {
   onOptionSelect: (index: number) => void;
   showFeedback?: boolean;
   correctIndex?: number;
+  correctShuffledIndex?: number;
   onNext?: () => void;
   canProceed?: boolean;
 };
@@ -19,12 +20,14 @@ export default function QuestionCard({
   onOptionSelect,
   showFeedback = false,
   correctIndex,
+  correctShuffledIndex,
   onNext,
   canProceed = false
 }: Props) {
+  const capitalizeFirst = (s: string) => (s && s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s);
   return (
     <div>
-      <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-6 sm:mb-8 text-primary text-center" style={{
+      <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-primary text-left" style={{
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         fontWeight: '700',
         letterSpacing: '-0.02em',
@@ -36,13 +39,13 @@ export default function QuestionCard({
           let textColor = 'text-text';
 
           if (showFeedback) {
-            // Показываем правильный ответ зеленым
-            if (idx === correctIndex) {
+            // Показываем правильный ответ зеленым (по индексу в перетасованном порядке)
+            if (idx === (typeof correctShuffledIndex === 'number' ? correctShuffledIndex : correctIndex)) {
               bgColor = 'bg-success-bg border-gray-200';
               textColor = 'text-success';
             }
             // Показываем выбранный неправильный ответ красным
-            else if (selectedOption === idx && idx !== correctIndex) {
+            else if (selectedOption === idx && idx !== (typeof correctShuffledIndex === 'number' ? correctShuffledIndex : correctIndex)) {
               bgColor = 'bg-error-bg border-gray-200';
               textColor = 'text-error';
             }
@@ -57,40 +60,41 @@ export default function QuestionCard({
               whileTap={!showFeedback ? { scale: 0.98 } : {}}
               onClick={() => !showFeedback && onOptionSelect(idx)}
               disabled={showFeedback}
-              className={`w-full text-left py-3 sm:py-4 px-4 sm:px-6 rounded-3xl border-2 ${bgColor} ${textColor} transition-all duration-300 ${
+              className={`w-full max-w-[360px] mx-auto sm:max-w-none text-left px-4 sm:px-6 py-3 sm:py-4 rounded-3xl border-2 ${bgColor} ${textColor} transition-all duration-300 ${
                 !showFeedback 
                   ? 'hover:bg-opacity-90 hover:shadow-lg hover:shadow-button-primary/20 hover:scale-[1.02]' 
                   : showFeedback && selectedOption === idx && idx !== correctIndex
                   ? 'shadow-lg'
                   : ''
-              } premium-text text-base sm:text-lg md:text-xl flex items-center justify-start`}
+              } premium-text text-base sm:text-lg md:text-xl flex items-start justify-start`}
+              style={{ width: window.innerWidth < 640 ? 'min(360px, calc(100vw - 32px))' : undefined }}
             >
-              {option}
+              <span className="leading-snug break-words whitespace-normal w-full">
+                {capitalizeFirst(option)}
+              </span>
             </motion.button>
           );
         })}
       </div>
       
-      {/* Зарезервированное место для кнопки */}
-      <div className="h-16 flex justify-center items-center">
+      {/* Кнопка далее: скрыта на мобильных (там отрисовывается глобально), в потоке на sm+ */}
+      <div className="hidden sm:flex h-16 justify-center items-center">
         {onNext && (
-          <div className="flex justify-center">
+          <div className="flex justify-center w-full">
           <motion.button
             whileTap={canProceed ? { scale: 0.95 } : {}}
             onClick={onNext}
             disabled={!canProceed}
-            className={`w-12 h-12 rounded-full premium-button transition-all duration-500 shadow-lg flex items-center justify-center ${
+            className={`relative w-12 h-12 rounded-full premium-button transition-all duration-500 shadow-lg flex items-center justify-center ${
               canProceed
                 ? 'bg-primary text-white hover:bg-secondary hover:shadow-xl hover:shadow-primary/30'
                 : 'bg-gray-100 text-gray-300'
             }`}
           >
             <svg 
-              width="16" 
-              height="16" 
               viewBox="0 0 24 24" 
               fill="none" 
-              className="transition-transform duration-300"
+              className="transition-transform duration-300 w-4 h-4"
             >
               <path 
                 d="M9 18L15 12L9 6" 
