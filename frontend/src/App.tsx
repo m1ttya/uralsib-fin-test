@@ -60,20 +60,8 @@ function App() {
 
   return (
     <div className="min-h-screen w-full flex flex-col">
-      <div className="flex-1 flex items-stretch justify-center sm:items-center sm:justify-center">
+      <div className="flex-1">
         {renderCurrentState()}
-      </div>
-      
-      {/* Общий копирайт внизу */}
-      <div className="fixed bottom-2 left-0 right-0 text-center z-[9999] px-4">
-        <a 
-          href="https://uralsib.ru/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-xs premium-text"
-        >
-          © 2005-2025 ПАО «Банк Уралсиб»
-        </a>
       </div>
     </div>
   );
