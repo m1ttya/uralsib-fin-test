@@ -58,8 +58,12 @@ function App() {
     }
   };
 
+  const containerClasses = appState === 'landing'
+    ? "min-h-screen w-full bg-gray-900 text-white"
+    : "min-h-screen w-full flex flex-col items-center justify-center bg-gray-900 text-white";
+
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white">
+    <div className={containerClasses}>
       {renderCurrentState()}
     </div>
   );
