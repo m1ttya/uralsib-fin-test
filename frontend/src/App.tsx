@@ -59,10 +59,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col">
-      <div className="flex-1">
-        {renderCurrentState()}
-      </div>
+    <div className="min-h-screen w-full bg-gray-900 text-white">
+      {renderCurrentState()}
     </div>
   );
 }
