@@ -2,7 +2,6 @@ import { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
 import TestFlow from './components/TestFlow';
-import { mockTests } from './data/mockTests';
 
 type AppState = 'landing' | 'login' | 'test-flow';
 
@@ -52,7 +51,7 @@ function App() {
         );
       
       case 'test-flow':
-        return <TestFlow tests={mockTests} onRestart={handleRestart} />;
+        return <TestFlow onRestart={handleRestart} />;
       
       default:
         return <LandingPage onStartTest={handleStartTest} />;

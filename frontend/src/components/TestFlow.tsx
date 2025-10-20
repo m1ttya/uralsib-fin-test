@@ -4,31 +4,25 @@ import QuestionCard from './QuestionCard';
 import ResultsView from './ResultsView';
 import CloseButton from './CloseButton';
 import ExitConfirmModal from './ExitConfirmModal';
-import { Test } from '../data/mockTests';
-
 type FlowState = 'categories' | 'test' | 'results';
 
-type TestMeta = { id: string; title: string; category: string; variant: string };
-type BackendQuestion = { id: string; text: string; options: string[] };
+type BackendQuestion = { id: string; text: string; options: string[]; correctIndex?: number };
 type BackendTest = { id: string; title: string; category: string; variant: string; questions: BackendQuestion[] };
 
 type Props = {
-  tests: Test[];
   onRestart: () => void;
 };
 
-export default function TestFlow({ tests, onRestart }: Props) {
+export default function TestFlow({ onRestart }: Props) {
   const [flowState, setFlowState] = useState<FlowState>('categories');
   const [selectedTest, setSelectedTest] = useState<BackendTest | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAgeGroups, setShowAgeGroups] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
-  const [testsMeta, setTestsMeta] = useState<TestMeta[] | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answerPending, setAnswerPending] = useState(false);
 
@@ -49,10 +43,9 @@ export default function TestFlow({ tests, onRestart }: Props) {
     const load = async () => {
       try {
         const res = await fetch('/api/tests');
-        const data = await res.json();
-        setTestsMeta(data.tests as TestMeta[]);
+        await res.json();
       } catch {
-        setTestsMeta([]);
+        //
       }
     };
     load();
@@ -81,7 +74,6 @@ export default function TestFlow({ tests, onRestart }: Props) {
 
   const handleCategoryClick = (categoryId: string) => {
     if (categoryId === 'school') {
-      setSelectedCategory(categoryId);
       setShowAgeGroups(true);
       return;
     }
@@ -154,7 +146,6 @@ export default function TestFlow({ tests, onRestart }: Props) {
     setAnswers([]);
     setShowFeedback(false);
     setSelectedOption(null);
-    setSelectedCategory(null);
     setShowAgeGroups(false);
   };
 
