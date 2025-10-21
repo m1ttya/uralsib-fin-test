@@ -2,7 +2,6 @@ import { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
 import TestFlow from './components/TestFlow';
-import { mockTests } from './data/mockTests';
 
 type AppState = 'landing' | 'login' | 'test-flow';
 
@@ -19,8 +18,6 @@ function App() {
   };
 
   const handleSkip = () => {
-    // Сначала закрываем модальное окно входа плавно
-    // Затем сразу переходим к тесту без задержки
     setAppState('test-flow');
   };
 
@@ -32,50 +29,42 @@ function App() {
     setAppState('landing');
   };
 
-
-  const renderCurrentState = () => {
+  // Определяет основное содержимое страницы
+  const renderPageContent = () => {
     switch (appState) {
-      case 'landing':
-        return <LandingPage onStartTest={handleStartTest} />;
-      
-      case 'login':
-        return (
-          <>
-            <LandingPage onStartTest={handleStartTest} />
-            <LoginModal
-              isOpen={true}
-              onClose={handleCloseLogin}
-              onLogin={handleLogin}
-              onSkip={handleSkip}
-            />
-          </>
-        );
-      
       case 'test-flow':
-        return <TestFlow tests={mockTests} onRestart={handleRestart} />;
+        return <TestFlow onRestart={handleRestart} />;
       
+      // Для 'landing' и 'login' фоном является LandingPage
+      case 'landing':
+      case 'login':
       default:
         return <LandingPage onStartTest={handleStartTest} />;
     }
   };
 
+  // Управляет стилями контейнера, включая блокировку прокрутки
+  const getContainerClasses = () => {
+    let classes = "min-h-screen w-full bg-gray-900 text-white";
+    if (appState === 'test-flow') {
+      classes += " flex flex-col items-center justify-center";
+    }
+    // Блокируем прокрутку, когда модальное окно открыто
+    if (appState === 'login') {
+      classes += " h-screen overflow-hidden";
+    }
+    return classes;
+  };
+
   return (
-    <div className="min-h-screen w-full flex flex-col">
-      <div className="flex-1 flex items-stretch justify-center sm:items-center sm:justify-center">
-        {renderCurrentState()}
-      </div>
-      
-      {/* Общий копирайт внизу */}
-      <div className="fixed bottom-2 left-0 right-0 text-center z-[9999] px-4">
-        <a 
-          href="https://uralsib.ru/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-xs premium-text"
-        >
-          © 2005-2025 ПАО «Банк Уралсиб»
-        </a>
-      </div>
+    <div className={getContainerClasses()}>
+      {renderPageContent()}
+      <LoginModal
+        isOpen={appState === 'login'}
+        onClose={handleCloseLogin}
+        onLogin={handleLogin}
+        onSkip={handleSkip}
+      />
     </div>
   );
 }
