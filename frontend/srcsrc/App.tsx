@@ -34,7 +34,7 @@ function App() {
     switch (appState) {
       case 'test-flow':
         return <TestFlow onRestart={handleRestart} />;
-      
+
       // Для 'landing' и 'login' фоном является LandingPage
       case 'landing':
       case 'login':
@@ -43,15 +43,6 @@ function App() {
     }
   };
 
-<<<<<<< HEAD
-  const containerClasses = appState === 'landing'
-    ? "min-h-screen w-full bg-gray-900 text-white"
-    : "min-h-screen w-full flex flex-col items-center justify-center bg-gray-900 text-white";
-
-  return (
-    <div className={containerClasses}>
-      {renderCurrentState()}
-=======
   // Управляет стилями контейнера, включая блокировку прокрутки
   const getContainerClasses = () => {
     let classes = "min-h-screen w-full bg-gray-900 text-white";
@@ -74,7 +65,6 @@ function App() {
         onLogin={handleLogin}
         onSkip={handleSkip}
       />
->>>>>>> 9df0eb0 (Apply patch /tmp/75dc8bf5-18b6-49bb-8c0e-cf098e20c633.patch)
     </div>
   );
 }

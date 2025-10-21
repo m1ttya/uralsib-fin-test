@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+<<<<<<< HEAD
+import { motion, AnimatePresence } from 'framer-motion';
+=======
+>>>>>>> 9df0eb0 (Apply patch /tmp/75dc8bf5-18b6-49bb-8c0e-cf098e20c633.patch)
 
 const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +14,28 @@ const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, ans
         className="w-full flex justify-between items-center text-left text-lg font-semibold text-gray-800"
       >
         <span>{question}</span>
+<<<<<<< HEAD
+        <motion.span
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        </motion.span>
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="mt-4 text-gray-600"
+          >
+            {answer}
+          </motion.div>
+        )}
+      </AnimatePresence>
+=======
         <span>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </span>
@@ -19,6 +45,7 @@ const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, ans
           {answer}
         </div>
       )}
+>>>>>>> 9df0eb0 (Apply patch /tmp/75dc8bf5-18b6-49bb-8c0e-cf098e20c633.patch)
     </div>
   );
 };
@@ -46,11 +73,24 @@ const FaqSection: React.FC = () => {
   return (
     <section className="py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+<<<<<<< HEAD
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h2 className="text-3xl sm:text-4xl md:text-5xl premium-heading font-bold text-center text-gray-800 mb-12">
+            Часто задаваемые вопросы
+          </h2>
+        </motion.div>
+=======
         <div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl premium-heading font-bold text-center text-gray-800 mb-12">
             Часто задаваемые вопросы
           </h2>
         </div>
+>>>>>>> 9df0eb0 (Apply patch /tmp/75dc8bf5-18b6-49bb-8c0e-cf098e20c633.patch)
         <div className="max-w-3xl mx-auto">
           {faqs.map((faq, index) => (
             <FaqItem key={index} question={faq.question} answer={faq.answer} />
