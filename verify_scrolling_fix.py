@@ -7,7 +7,7 @@ async def main():
         page = await browser.new_page()
 
         # Navigate to the initial page
-        await page.goto("http://localhost:5174/uralsib-fin-test/")
+        await page.goto("http://localhost:5176/uralsib-fin-test/")
 
         # Take a screenshot of the initial page load
         await page.screenshot(path="jules-scratch/verification/01-initial-load-fix-attempt.png")
