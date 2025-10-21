@@ -34,7 +34,7 @@ function App() {
     switch (appState) {
       case 'test-flow':
         return <TestFlow onRestart={handleRestart} />;
-      
+
       // Для 'landing' и 'login' фоном является LandingPage
       case 'landing':
       case 'login':
