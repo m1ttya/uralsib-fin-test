@@ -5,6 +5,7 @@ services:
     rootDir: backend
     plan: free
     buildCommand: |
+      npm install --save-dev @types/node @types/express @types/cors
       npm install --legacy-peer-deps
       npm run build
     startCommand: npm start
