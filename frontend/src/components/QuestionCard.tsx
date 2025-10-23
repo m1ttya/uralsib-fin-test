@@ -1,7 +1,6 @@
 // frontend/src/components/QuestionCard.tsx
 import { motion } from 'framer-motion';
 import CollapseText from './CollapseText';
-import { useState } from 'react';
 
 type Props = {
   question: string;

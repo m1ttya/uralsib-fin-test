@@ -33,9 +33,6 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
 
   const score = Math.round((correctCount / test.questions.length) * 100);
 
-  type Level = 'low' | 'mid' | 'high';
-  const level: Level = score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low';
-
   const handleGoToBank = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
