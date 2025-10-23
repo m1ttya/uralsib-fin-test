@@ -42,7 +42,7 @@ export default function TestFlow({ onRestart }: Props) {
 
   const startBackendTest = async (testId: string) => {
     try {
-      const res = await fetch(`/api/tests/${testId}/start?v=${Date.now()}` as any, { method: 'POST', cache: 'no-store' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/tests/${testId}/start?v=${Date.now()}` as any, { method: 'POST', cache: 'no-store' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || 'Failed to start test');
@@ -85,7 +85,7 @@ export default function TestFlow({ onRestart }: Props) {
     if (selectedTest && sessionId) {
       const q = selectedTest.questions[currentQuestionIndex];
       setAnswerPending(true);
-      fetch(`/api/tests/${selectedTest.id}/answer?v=${Date.now()}` as any, {
+      fetch(`${import.meta.env.VITE_API_URL}/api/tests/${selectedTest.id}/answer?v=${Date.now()}` as any, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
