@@ -1,8 +1,20 @@
 services:
+  # Frontend
   - type: static_site
-    name: uralsib-fin-test
+    name: uralsib-fin-test-frontend
     env: static
     branch: main
-    rootDir: frontend
-    buildCommand: "npm install && npm run build"
-    staticPublishPath: "dist"
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: "frontend/dist"
+    routes:
+      - type: rewrite
+        source: /api/(.*)
+        destination: https://uralsib-fin-test-backend.onrender.com/api/$1
+
+  # Backend
+  - type: web_service
+    name: uralsib-fin-test-backend
+    env: node
+    branch: main
+    buildCommand: "cd backend && npm install"
+    startCommand: "cd backend && npm start"
