@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "ts-node src/server.ts",
-    "start": "ts-node src/server.ts",
+    "start": "node_modules/.bin/ts-node src/server.ts",
     "build:frontend": "npm --prefix ../frontend ci && npm --prefix ../frontend run build && node ./tools/copy_frontend.mjs",
     "postbuild": "npm run build:frontend"
   },
