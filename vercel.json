@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/backend/src/server.ts"
+    }
+  ],
+  "functions": {
+    "backend/src/server.ts": {
+      "runtime": "@vercel/node"
+    }
+  }
+}
