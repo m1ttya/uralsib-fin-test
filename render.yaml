@@ -7,8 +7,7 @@ services:
     buildCommand: |
       npm install --save-dev @types/node @types/express @types/cors
       npm install --legacy-peer-deps
-      npm run build
-    startCommand: npm start
+    startCommand: ts-node src/server.ts
     autoDeploy: true
     envVars:
       - key: NODE_ENV
