@@ -1,0 +1,8 @@
+services:
+  - type: static_site
+    name: uralsib-fin-test
+    env: static
+    branch: main
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: "dist"
