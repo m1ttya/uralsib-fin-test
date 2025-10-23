@@ -1,5 +1,7 @@
 // frontend/src/components/QuestionCard.tsx
 import { motion } from 'framer-motion';
+import CollapseText from './CollapseText';
+import { useState } from 'react';
 
 type Props = {
   question: string;
@@ -11,6 +13,7 @@ type Props = {
   correctShuffledIndex?: number;
   onNext?: () => void;
   canProceed?: boolean;
+  explanation?: string;
 };
 
 export default function QuestionCard({
@@ -22,17 +25,13 @@ export default function QuestionCard({
   correctIndex,
   correctShuffledIndex,
   onNext,
-  canProceed = false
+  canProceed = false,
+  explanation
 }: Props) {
   const capitalizeFirst = (s: string) => (s && s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s);
   return (
     <div>
-      <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-primary text-left" style={{
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        fontWeight: '700',
-        letterSpacing: '-0.02em',
-        lineHeight: '1.1'
-      }}>{question}</h2>
+      <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-primary text-left font-bold">{question}</h2>
       <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
         {options.map((option, idx) => {
           let bgColor = 'bg-white border-gray-200';
@@ -77,6 +76,10 @@ export default function QuestionCard({
         })}
       </div>
       
+      {showFeedback && explanation && (
+        <CollapseText title="Почему так" text={explanation} />
+      )}
+
       {/* Кнопка далее: скрыта на мобильных (там отрисовывается глобально), в потоке на sm+ */}
       <div className="hidden sm:flex h-16 justify-center items-center">
         {onNext && (

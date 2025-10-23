@@ -6,8 +6,7 @@ module.exports = {
       colors: {
         primary: '#3B175C',     // Цвет логотипа
         secondary: '#6A2E8F',   // Акцентный фиолетовый
-        success: '#28A745',
-        error: '#DC3545',
+        // removed old success/error to avoid duplication
         background: '#F8F9FA',
         text: '#1A1A1A',
         card: '#FFFFFF',
@@ -20,11 +19,11 @@ module.exports = {
         'button-skip': '#6B7280',
         'button-skip-hover': '#7E8696',
         'modal-bg': '#252030',
-        'success': '#10B981',
+        success: '#10B981',
         'success-bg': '#ECFDF5',
         'success-border': '#10B981',
         'success-ring': '#10B981',
-        'error': '#EF4444',
+        error: '#EF4444',
         'error-bg': '#FEF2F2',
         'error-border': '#EF4444',
         'error-ring': '#EF4444'
@@ -36,7 +35,7 @@ module.exports = {
       },
       fontFamily: {
         sans: [
-          'Roboto',
+          'Uralsib-Regular', 'Uralsib-Light', 'Uralsib-Bold',
           '-apple-system',
           'BlinkMacSystemFont',
           '"Segoe UI"',
@@ -50,5 +49,5 @@ module.exports = {
       }
     }
   },
-  plugins: []
+  plugins: [require('@tailwindcss/typography')]
 }

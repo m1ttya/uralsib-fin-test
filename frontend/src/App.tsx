@@ -2,7 +2,6 @@ import { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
 import TestFlow from './components/TestFlow';
-import { mockTests } from './data/mockTests';
 
 type AppState = 'landing' | 'login' | 'test-flow';
 
@@ -52,7 +51,7 @@ function App() {
         );
       
       case 'test-flow':
-        return <TestFlow tests={mockTests} onRestart={handleRestart} />;
+        return <TestFlow onRestart={handleRestart} />;
       
       default:
         return <LandingPage onStartTest={handleStartTest} />;
@@ -60,22 +59,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col">
-      <div className="flex-1 flex items-stretch justify-center sm:items-center sm:justify-center">
-        {renderCurrentState()}
-      </div>
-      
-      {/* Общий копирайт внизу */}
-      <div className="fixed bottom-2 left-0 right-0 text-center z-[9999] px-4">
-        <a 
-          href="https://uralsib.ru/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-xs premium-text"
-        >
-          © 2005-2025 ПАО «Банк Уралсиб»
-        </a>
-      </div>
+    <div className="min-h-screen w-full">
+      {renderCurrentState()}
     </div>
   );
 }

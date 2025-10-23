@@ -4,31 +4,26 @@ import QuestionCard from './QuestionCard';
 import ResultsView from './ResultsView';
 import CloseButton from './CloseButton';
 import ExitConfirmModal from './ExitConfirmModal';
-import { Test } from '../data/mockTests';
 
 type FlowState = 'categories' | 'test' | 'results';
 
-type TestMeta = { id: string; title: string; category: string; variant: string };
 type BackendQuestion = { id: string; text: string; options: string[] };
 type BackendTest = { id: string; title: string; category: string; variant: string; questions: BackendQuestion[] };
 
 type Props = {
-  tests: Test[];
   onRestart: () => void;
 };
 
-export default function TestFlow({ tests, onRestart }: Props) {
+export default function TestFlow({ onRestart }: Props) {
   const [flowState, setFlowState] = useState<FlowState>('categories');
   const [selectedTest, setSelectedTest] = useState<BackendTest | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAgeGroups, setShowAgeGroups] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [progressPct, setProgressPct] = useState(0);
-  const [testsMeta, setTestsMeta] = useState<TestMeta[] | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answerPending, setAnswerPending] = useState(false);
 
@@ -44,23 +39,10 @@ export default function TestFlow({ tests, onRestart }: Props) {
     { id: '15-18', name: '15-18 лет', icon: '🎓' }
   ];
 
-  // load tests metadata once
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/tests');
-        const data = await res.json();
-        setTestsMeta(data.tests as TestMeta[]);
-      } catch {
-        setTestsMeta([]);
-      }
-    };
-    load();
-  }, []);
 
   const startBackendTest = async (testId: string) => {
     try {
-      const res = await fetch(`/api/tests/${testId}/start`, { method: 'POST' });
+      const res = await fetch(`/api/tests/${testId}/start?v=${Date.now()}` as any, { method: 'POST', cache: 'no-store' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || 'Failed to start test');
@@ -81,7 +63,6 @@ export default function TestFlow({ tests, onRestart }: Props) {
 
   const handleCategoryClick = (categoryId: string) => {
     if (categoryId === 'school') {
-      setSelectedCategory(categoryId);
       setShowAgeGroups(true);
       return;
     }
@@ -104,9 +85,10 @@ export default function TestFlow({ tests, onRestart }: Props) {
     if (selectedTest && sessionId) {
       const q = selectedTest.questions[currentQuestionIndex];
       setAnswerPending(true);
-      fetch(`/api/tests/${selectedTest.id}/answer`, {
+      fetch(`/api/tests/${selectedTest.id}/answer?v=${Date.now()}` as any, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({ sessionId, questionId: q.id, selectedIndex: index })
       })
         .then(async (res) => {
@@ -116,6 +98,8 @@ export default function TestFlow({ tests, onRestart }: Props) {
             const next = { ...selectedTest } as any;
             if (!next.__correctByQ) next.__correctByQ = {};
             next.__correctByQ[q.id] = data.correctOptionIndex;
+            if (!next.__explanationByQ) next.__explanationByQ = {};
+            next.__explanationByQ[q.id] = data.explanationForSelected || (q as any).correctExplanation || '';
             setSelectedTest(next);
           }
           setShowFeedback(true);
@@ -154,7 +138,6 @@ export default function TestFlow({ tests, onRestart }: Props) {
     setAnswers([]);
     setShowFeedback(false);
     setSelectedOption(null);
-    setSelectedCategory(null);
     setShowAgeGroups(false);
   };
 
@@ -309,8 +292,8 @@ export default function TestFlow({ tests, onRestart }: Props) {
                       selectedOption={selectedOption}
                       onOptionSelect={handleOptionSelect}
                       showFeedback={showFeedback}
-                      correctIndex={currentQuestion.correctIndex}
                       correctShuffledIndex={(selectedTest as any).__correctByQ?.[currentQuestion.id]}
+                      explanation={(selectedTest as any).__explanationByQ?.[currentQuestion.id]}
                       onNext={handleNext}
                       canProceed={selectedOption !== null && showFeedback}
                     />

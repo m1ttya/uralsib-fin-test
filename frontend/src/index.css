@@ -1,30 +1,80 @@
 /* frontend/src/index.css */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Uralsib local fonts */
+@font-face {
+  font-family: 'Uralsib-Regular';
+  src: url('/fonts/Uralsib/Uralsib-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Uralsib-Light';
+  src: url('/fonts/Uralsib/Uralsib-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Uralsib-Bold';
+  src: url('/fonts/Uralsib/Uralsib-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Uralsib-Italic';
+  src: url('/fonts/Uralsib/Uralsib-Italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Uralsib-LightItalic';
+  src: url('/fonts/Uralsib/Uralsib-LightItalic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Uralsib-BoldItalic';
+  src: url('/fonts/Uralsib/Uralsib-BoldItalic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
 
 @tailwind base;
+
+@layer base {
+  html { scroll-behavior: smooth; height: auto; min-height: 100%; }
+  body { @apply font-sans text-text; height: auto; min-height: 100%; overflow-y: auto; }
+  body { background: linear-gradient(135deg, #e7e4ef 0%, #ffffff 100%); }
+}
+
 @tailwind components;
 @tailwind utilities;
 
-/* Убираем прокрутку для модальных окон, но разрешаем для лендинга */
-html, body {
-  overflow: hidden;
-  height: 100vh;
+/* Styled scrollbar for modal content area to preserve rounded corners aesthetics */
+.modal-scroll-area {
+  scrollbar-gutter: stable both-edges;
 }
+.modal-scroll-area::-webkit-scrollbar {
+  width: 10px;
+}
+.modal-scroll-area::-webkit-scrollbar-track {
+  background: #f3f4f6; /* gray-100 */
+  border-radius: 9999px;
+  margin: 8px;
+}
+.modal-scroll-area::-webkit-scrollbar-thumb {
+  background: #d1d5db; /* gray-300 */
+  border-radius: 9999px;
+  border: 2px solid #f3f4f6;
+}
+.modal-scroll-area { scrollbar-width: thin; scrollbar-color: #d1d5db #f3f4f6; }
 
-#root {
-  height: 100vh;
-  overflow: hidden;
-}
 
-/* Разрешаем прокрутку для лендинга */
-.landing-page {
-  overflow-y: auto !important;
-  height: 100vh !important;
-  width: 100vw !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-}
+/* Разрешаем нормальную прокрутку страницы; модалки сами управляют скроллом локально */
 
 /* Убираем все CSS правила для кнопки - используем только inline стили */
 
@@ -177,50 +227,11 @@ html, body {
 
 /* Увеличение масштаба для мобильных */
 @media (max-width: 475px) {
-  html {
-    font-size: 18px;
-  }
-  
-  body {
-    overflow: hidden !important;
-  }
-  
-  html {
-    overflow: hidden !important;
-  }
-  
-  #root {
-    overflow: hidden !important;
-  }
-  
-  .fixed.inset-0 {
-    overflow: hidden !important;
-  }
-  
-  .modal-overlay {
-    overflow: hidden !important;
-  }
-  
-  .modal-paper {
-    overflow: hidden !important;
-  }
-  
-  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 {
-    overflow: hidden !important;
-  }
-  
-  .modal-overlay {
-    align-items: flex-start;
-    justify-content: flex-start;
-  }
-  
-  /* Логин модал на весь экран для мобильных */
-  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 {
-    padding: 0 !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-  }
-  
+  html { font-size: 18px; }
+  /* Модалки корректируют свои отступы, но глобальный скролл не блокируем */
+  .modal-overlay { align-items: flex-start; justify-content: center; }
+
+  /* Полноэкранная модалка на мобилках */
   .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 > div {
     width: 100vw !important;
     max-width: 100vw !important;

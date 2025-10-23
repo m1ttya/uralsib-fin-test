@@ -8,6 +8,8 @@ type Question = {
   text: string;
   options: string[];
   correctIndex: number;
+  // Optional: explanation only for the correct answer (from DOCX)
+  correctExplanation?: string;
 };
 
 type TestData = {
@@ -184,7 +186,8 @@ testsRouter.post('/:testId/answer', async (req, res) => {
   const correctOptionIndex = map.findIndex((orig) => orig === q.correctIndex);
 
   session.answers[questionId] = selectedIndex;
-  res.json({ correct, correctOptionIndex });
+  const explanationForSelected = q.correctExplanation ?? null;
+  res.json({ correct, correctOptionIndex, explanationForSelected });
   } catch (e) {
     res.status(500).json({ error: 'Failed to check answer' });
   }

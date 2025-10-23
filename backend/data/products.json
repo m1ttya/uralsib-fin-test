@@ -1,0 +1,109 @@
+{
+  "products": [
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/kreditnye-karty",
+      "linkUrl": "https://uralsib.ru/kreditnye-karty",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/debetovye-karty",
+      "linkUrl": "https://uralsib.ru/debetovye-karty",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/kredity",
+      "linkUrl": "https://uralsib.ru/kredity",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/ipoteka",
+      "linkUrl": "https://uralsib.ru/ipoteka",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/ipoteka/refinansirovanie",
+      "linkUrl": "https://uralsib.ru/ipoteka/refinansirovanie",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/vklady-scheta/vklady",
+      "linkUrl": "https://uralsib.ru/vklady-scheta/vklady",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/vklady-scheta/scheta#open-deposit",
+      "linkUrl": "https://uralsib.ru/vklady-scheta/scheta#open-deposit",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/investicii",
+      "linkUrl": "https://uralsib.ru/investicii",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/strakhovanie",
+      "linkUrl": "https://uralsib.ru/strakhovanie",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/aktsii?filters=chastnym-litsam",
+      "linkUrl": "https://uralsib.ru/aktsii?filters=chastnym-litsam",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/premium",
+      "linkUrl": "https://uralsib.ru/premium",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/business/corporate-card",
+      "linkUrl": "https://uralsib.ru/business/corporate-card",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/business/ved",
+      "linkUrl": "https://uralsib.ru/business/ved",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/",
+      "linkUrl": "https://uralsib.ru/",
+      "linkText": "Перейти"
+    },
+    {
+      "category": "generic",
+      "level": "all",
+      "title": "https://uralsib.ru/online",
+      "linkUrl": "https://uralsib.ru/online",
+      "linkText": "Перейти"
+    }
+  ]
+}
