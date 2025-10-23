@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { testsRouter } from './tests/router';
 
 const app = express();
@@ -12,8 +11,6 @@ app.use(express.json());
 app.use('/api/tests', testsRouter);
 
 // Static frontend serving
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, '../../public');
 app.use(express.static(publicDir));
 app.get('*', (_req, res) => {
