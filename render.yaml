@@ -2,7 +2,7 @@ services:
   - type: web
     name: uralsib-fin-test
     env: node
-    rootDir: .
+    rootDir: backend
     plan: free
     buildCommand: |
       npm ci
