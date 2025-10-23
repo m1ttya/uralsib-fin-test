@@ -5,9 +5,9 @@ services:
     rootDir: backend
     plan: free
     buildCommand: |
-      npm install --save-dev @types/node @types/express @types/cors
-      npm install --legacy-peer-deps
-    startCommand: node_modules/.bin/ts-node src/server.ts
+      npm ci
+      npm run build
+    startCommand: npm start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
