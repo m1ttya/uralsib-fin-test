@@ -13,8 +13,13 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:4001',
         changeOrigin: true,
-        secure: false
-      }
-    }
-  }
+        secure: false,
+      },
+      '/articles': {
+        target: 'http://localhost:4001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });

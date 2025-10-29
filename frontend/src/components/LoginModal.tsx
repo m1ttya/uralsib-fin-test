@@ -1,4 +1,33 @@
 import { useState, useEffect } from 'react';
+
+function LogoWithSecretClicks() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (count === 0) return;
+    const t = setTimeout(() => setCount(0), 1500); // окно сброса
+    return () => clearTimeout(t);
+  }, [count]);
+  const onClick = () => {
+    const next = count + 1;
+    if (next >= 5) {
+      // Переход в админ-панель
+      window.location.hash = '#admin';
+      setCount(0);
+      return;
+    }
+    setCount(next);
+  };
+  return (
+    <div className="flex flex-col items-center mb-6 sm:mb-6 pt-8 sm:pt-0 select-none">
+      <img
+        onClick={onClick}
+        src="./uralsib_logo_square_white.svg"
+        alt="Банк Уралсиб"
+        className="w-32 h-32 sm:w-32 sm:h-32 cursor-default select-none"
+      />
+    </div>
+  );
+}
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Props = {
@@ -9,7 +38,7 @@ type Props = {
 };
 
 export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) {
-  const [isChecked, setIsChecked] = useState(true);
+  const [isChecked, setIsChecked] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
@@ -63,14 +92,8 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
               </svg>
             </button>
 
-            {/* Логотип Уралсиб */}
-            <div className="flex justify-center mb-6 sm:mb-6 pt-8 sm:pt-0">
-              <img 
-                src="./uralsib_logo_square_white.svg"
-                alt="Банк Уралсиб" 
-                className="w-32 h-32 sm:w-32 sm:h-32"
-              />
-            </div>
+            {/* Логотип Уралсиб (5 кликов для входа в админку) */}
+            <LogoWithSecretClicks />
 
             {/* Заголовок */}
             <h2 className="text-xl sm:text-2xl text-white text-center mb-3 sm:mb-4" style={{

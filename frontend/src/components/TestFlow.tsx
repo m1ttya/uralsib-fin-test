@@ -15,6 +15,7 @@ type Props = {
 };
 
 export default function TestFlow({ onRestart }: Props) {
+  const API_BASE = (import.meta as any).env?.VITE_API_URL || '';
   const [flowState, setFlowState] = useState<FlowState>('categories');
   const [selectedTest, setSelectedTest] = useState<BackendTest | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -42,7 +43,8 @@ export default function TestFlow({ onRestart }: Props) {
 
   const startBackendTest = async (testId: string) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/tests/${testId}/start?v=${Date.now()}` as any, { method: 'POST', cache: 'no-store' });
+      const url = `${API_BASE}/api/tests/${testId}/start?v=${Date.now()}`.replace(/^\/+/, '');
+      const res = await fetch(url as any, { method: 'POST', cache: 'no-store' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || 'Failed to start test');
@@ -85,7 +87,7 @@ export default function TestFlow({ onRestart }: Props) {
     if (selectedTest && sessionId) {
       const q = selectedTest.questions[currentQuestionIndex];
       setAnswerPending(true);
-      fetch(`${import.meta.env.VITE_API_URL}/api/tests/${selectedTest.id}/answer?v=${Date.now()}` as any, {
+      fetch((`${API_BASE}/api/tests/${selectedTest.id}/answer?v=${Date.now()}`).replace(/^\/+/, '') as any, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',

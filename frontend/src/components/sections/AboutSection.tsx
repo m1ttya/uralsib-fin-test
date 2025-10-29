@@ -25,7 +25,7 @@ export default function AboutSection() {
     },
   ];
 
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <section id="about" className="py-12 md:py-20 scroll-mt-24">

@@ -1,12 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
 import TestFlow from './components/TestFlow';
+import AdminPanel from './components/admin/AdminPanel';
+import AdminGate from './components/admin/AdminGate';
 
-type AppState = 'landing' | 'login' | 'test-flow';
+type AppState = 'landing' | 'login' | 'test-flow' | 'admin';
 
 function App() {
-  const [appState, setAppState] = useState<AppState>('landing');
+  const [appState, setAppState] = useState<AppState>(() => (window.location.hash === '#admin' ? 'admin' : 'landing'));
+
+  // keep appState in sync with hash
+  useEffect(() => {
+    const onHashChange = () => {
+      if (window.location.hash === '#admin') {
+        setAppState('admin');
+      } else if (window.location.hash === '') {
+        setAppState('landing');
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const handleStartTest = () => {
     setAppState('login');
@@ -52,7 +67,12 @@ function App() {
       
       case 'test-flow':
         return <TestFlow onRestart={handleRestart} />;
-      
+      case 'admin':
+        return (
+          <AdminGate>
+            <AdminPanel />
+          </AdminGate>
+        );
       default:
         return <LandingPage onStartTest={handleStartTest} />;
     }

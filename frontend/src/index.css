@@ -717,3 +717,10 @@
 }
 
 /* Не добавляйте font-family здесь — Tailwind сделает это сам */
+
+/* Форсируем нормальную маску в инпуте пароля и системный шрифт, чтобы не подхватывался кастомный символ из фирменного шрифта */
+input[type="password"] {
+  -webkit-text-security: disc;
+  text-security: disc;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+}

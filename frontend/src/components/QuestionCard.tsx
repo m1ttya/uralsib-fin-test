@@ -76,7 +76,9 @@ export default function QuestionCard({
       </div>
       
       {showFeedback && explanation && (
-        <CollapseText title="Почему так" text={explanation} />
+        <div className="mb-4 sm:mb-6">
+          <CollapseText title="Почему так" text={explanation} />
+        </div>
       )}
 
       {/* Кнопка далее: скрыта на мобильных (там отрисовывается глобально), в потоке на sm+ */}

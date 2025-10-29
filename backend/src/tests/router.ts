@@ -221,4 +221,42 @@ testsRouter.post('/:testId/submit', async (req, res) => {
   }
 });
 
+// Admin endpoint for deleting tests
+testsRouter.delete('/admin/delete', async (req, res) => {
+  try {
+    const { path: testPath } = req.query;
+    if (typeof testPath !== 'string') {
+      return res.status(400).json({ error: 'Путь не указан' });
+    }
+    
+    // Sanitize path - allow only safe characters
+    const safePath = testPath.replace(/[^a-zA-Zа-яёА-ЯЁ0-9_.\/-]/g, '');
+    if (!safePath.endsWith('.json')) {
+      return res.status(400).json({ error: 'Можно удалять только JSON файлы' });
+    }
+    
+    const fullPath = path.join(dataRoot, safePath);
+    
+    // Ensure the file is within tests directory
+    if (!fullPath.startsWith(dataRoot)) {
+      return res.status(400).json({ error: 'Некорректный путь' });
+    }
+    
+    // Check if file exists
+    try {
+      await fs.access(fullPath);
+    } catch {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
+    
+    // Delete the file
+    await fs.unlink(fullPath);
+    
+    res.json({ ok: true, message: 'Тест успешно удален' });
+  } catch (e: any) {
+    console.error('Error deleting test:', e);
+    res.status(500).json({ error: 'Ошибка удаления теста', details: e?.message });
+  }
+});
+
 
