@@ -123,11 +123,11 @@
 
 /* Специальные стили для окна результатов */
 .results-modal-paper {
-  width: 380px;
+  width: min(900px, 94vw);
   padding: 0;
-  background-color: white;
+  background-color: transparent;
   border-radius: 32px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: none;
   max-height: calc(100vh - 4rem);
   overflow-y: auto;
   scrollbar-width: none;
@@ -183,7 +183,7 @@
 @media (max-width: 1023px) {
   .results-modal-paper {
     width: 90%;
-    max-width: 420px;
+    max-width: none;
     margin: 2rem 1rem;
     max-height: calc(100vh - 4rem);
   }
@@ -192,7 +192,7 @@
 @media (max-width: 1279px) {
   .results-modal-paper {
     width: 70%;
-    max-width: 380px;
+    max-width: none;
     margin: 2rem 1rem;
     max-height: calc(100vh - 4rem);
   }
@@ -201,7 +201,7 @@
 @media (min-width: 1280px) {
   .results-modal-paper {
     width: 40%;
-    max-width: 380px;
+    max-width: none;
     margin: 2rem 1rem;
     max-height: calc(100vh - 4rem);
   }
@@ -398,7 +398,7 @@
 
 /* Специальные стили для окна теста */
 .test-modal-paper {
-  width: 600px;
+  width: min(960px, 94vw);
   padding: 0;
   background-color: white;
   border-radius: 32px;
@@ -466,8 +466,7 @@
 
 @media (max-width: 1023px) {
   .test-modal-paper {
-    width: 95%;
-    max-width: 600px;
+    /* keep responsive width from base: min(960px, 94vw) */
     margin: 2rem 1rem;
     max-height: calc(100vh - 4rem);
   }
@@ -475,8 +474,7 @@
 
 @media (max-width: 1279px) {
   .test-modal-paper {
-    width: 90%;
-    max-width: 700px;
+    /* keep responsive width from base: min(960px, 94vw) */
     margin: 2rem 1rem;
     max-height: calc(100vh - 4rem);
   }
@@ -484,8 +482,7 @@
 
 @media (min-width: 1280px) {
   .test-modal-paper {
-    width: 80%;
-    max-width: 800px;
+    /* keep responsive width from base: min(960px, 94vw) */
     margin: 2rem 1rem;
     max-height: calc(100vh - 4rem);
   }

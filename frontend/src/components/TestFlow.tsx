@@ -28,11 +28,39 @@ export default function TestFlow({ onRestart }: Props) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answerPending, setAnswerPending] = useState(false);
 
-  const categories = [
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string }>>([
     { id: 'school', name: 'Школьники', icon: '📚' },
     { id: 'adults', name: 'Взрослые', icon: '👔' },
     { id: 'seniors', name: 'Пенсионеры', icon: '👴' }
-  ];
+  ]);
+
+  useEffect(() => {
+    // подгружаем категории тестов с бэкенда и объединяем с дефолтными
+    const load = async () => {
+      try {
+        const res = await fetch('/api/tests/categories');
+        if (!res.ok) return; // остаёмся на дефолтном наборе, если ошибка
+        const items = await res.json();
+        // items: [{ key, title }]
+        // маппинг: school, adults, seniors уже есть; новые категории добавляем с иконкой по умолчанию
+        const base = [
+          { id: 'school', name: 'Школьники', icon: '📚' },
+          { id: 'adults', name: 'Взрослые', icon: '👔' },
+          { id: 'seniors', name: 'Пенсионеры', icon: '👴' }
+        ];
+        const mapped = items.map((it: any) => ({ id: it.key, name: it.title }));
+        // объединяем, заменяя name у базовых, если ключ совпал
+        const map = new Map(base.map(b => [b.id, { ...b }]));
+        for (const it of mapped) {
+          if (map.has(it.id)) map.set(it.id, { ...map.get(it.id)!, name: it.name });
+          else map.set(it.id, { id: it.id, name: it.name, icon: '🧩' });
+        }
+        setCategories(Array.from(map.values()));
+      } catch {}
+    };
+    load();
+  }, []);
+
 
   const ageGroups = [
     { id: '5-10', name: '5-10 лет', icon: '🎨' },
@@ -68,8 +96,8 @@ export default function TestFlow({ onRestart }: Props) {
       setShowAgeGroups(true);
       return;
     }
-    // adults -> adults_general; seniors -> pensioners_general
-    const testId = categoryId === 'adults' ? 'adults_general' : 'pensioners_general';
+    // for known categories keep mapping; for any other folder use <folder>_general by convention
+    const testId = categoryId === 'adults' ? 'adults_general' : categoryId === 'seniors' ? 'pensioners_general' : `${categoryId}_general`;
     startBackendTest(testId);
   };
 
@@ -161,13 +189,20 @@ export default function TestFlow({ onRestart }: Props) {
 
   return (
     <div className="modal-overlay">
-      <motion.div layout transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1.0] }} style={{ willChange: 'width, height' }} className={`${flowState === 'categories' ? 'category-modal-paper' : flowState === 'results' ? 'results-modal-paper' : 'test-modal-paper'} w-full flex flex-col relative`}>
-        <CloseButton onClick={handleCloseClick} />
+      <motion.div
+        layout
+        transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1.0] }}
+        style={{ willChange: 'width, height', width: flowState === 'results' ? 'min(1200px, 98vw)' : 'min(960px, 94vw)' }}
+        className={`${flowState === 'categories' ? 'category-modal-paper' : flowState === 'results' ? 'results-modal-paper overflow-hidden' : 'test-modal-paper'} flex flex-col relative`}
+      >
+        <CloseButton onClick={handleCloseClick} isWhite={flowState === 'results'} />
 
         {/* Логотип */}
-        <div className="flex justify-center py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8">
-          <img src="./uralsib_logo.svg" alt="Банк Уралсиб" className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto" />
-        </div>
+        {flowState !== 'results' && (
+          <div className="flex justify-center py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8">
+            <img src="./uralsib_logo.svg" alt="Банк Уралсиб" className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto" />
+          </div>
+        )}
 
         {/* Прогресс-бар для экрана теста */}
         {flowState === 'test' && selectedTest && (
@@ -186,7 +221,7 @@ export default function TestFlow({ onRestart }: Props) {
         )}
 
         {/* Контент */}
-        <div className="flex-1 px-4 sm:px-6 md:px-8 pb-40 sm:pb-6 md:pb-8">
+        <div className={`flex-1 ${flowState === 'results' ? '' : 'px-4 sm:px-6 md:px-8 pb-40 sm:pb-6 md:pb-8'}`}>
           <AnimatePresence mode="wait">
             {flowState === 'results' ? (
               <motion.div

@@ -2,9 +2,10 @@ import { motion } from 'framer-motion';
 
 type Props = {
   onClick: () => void;
+  isWhite?: boolean;
 };
 
-export default function CloseButton({ onClick }: Props) {
+export default function CloseButton({ onClick, isWhite = false }: Props) {
   return (
     <motion.button
       whileHover={{ scale: 1.1 }}
@@ -18,7 +19,7 @@ export default function CloseButton({ onClick }: Props) {
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="text-gray-600"
+        className={isWhite ? "text-white" : "text-gray-600"}
       >
         <path
           d="M18 6L6 18M6 6L18 18"

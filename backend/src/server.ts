@@ -27,7 +27,7 @@ const ARTICLES_DIR = path.resolve(__dirname, '../uploads/articles');
 const ARTICLES_META = path.resolve(__dirname, '../uploads/articles_meta.json');
 // ensure directory exists (no top-level await)
 fs.mkdir(ARTICLES_DIR, { recursive: true }).catch(() => {});
-app.use('/articles', express.static(ARTICLES_DIR));
+app.use('/articles', cors({ origin: true }), express.static(ARTICLES_DIR));
 
 async function readMeta() {
   try {
@@ -120,6 +120,20 @@ const PRODUCTS_FILE = path.resolve(__dirname, '../../frontend/public/api/product
 
 // ===== Admin: Tests =====
 const TESTS_ROOT = path.resolve(__dirname, '../data/tests');
+const TESTS_META = path.resolve(__dirname, '../data/tests_meta.json');
+
+async function readTestsMeta() {
+  try {
+    const txt = await fs.readFile(TESTS_META, 'utf8');
+    const json = JSON.parse(txt);
+    if (json && typeof json === 'object') return json;
+  } catch {}
+  return { titles: {} as Record<string, string> };
+}
+async function writeTestsMeta(meta: any) {
+  const data = { titles: {}, ...(typeof meta === 'object' && meta ? meta : {}) };
+  await fs.writeFile(TESTS_META, JSON.stringify(data, null, 2), 'utf8');
+}
 
 function isInside(root: string, p: string) {
   const rel = path.relative(root, p);
@@ -145,6 +159,45 @@ app.get('/api/admin/tests/list', ensureAdmin, async (_req, res) => {
   }
 });
 
+// Tests meta (titles for top-level folders)
+app.get('/api/admin/tests/meta', ensureAdmin, async (_req, res) => {
+  try {
+    const meta = await readTestsMeta();
+    res.json(meta);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Не удалось прочитать метаданные тестов', details: e?.message });
+  }
+});
+
+app.put('/api/admin/tests/meta', ensureAdmin, async (req, res) => {
+  try {
+    const body = req.body;
+    if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Ожидается JSON' });
+    await writeTestsMeta(body);
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Не удалось сохранить метаданные тестов', details: e?.message });
+  }
+});
+
+// Public categories list for landing
+// Always return exactly three categories mapped from folders:
+// children -> school, adults -> adults, pensioners -> seniors
+app.get('/api/tests/categories', async (_req, res) => {
+  try {
+    const meta = await readTestsMeta();
+    const t = (meta as any)?.titles || {};
+    const items = [
+      { key: 'school', title: t.children || 'Школьники' },
+      { key: 'adults', title: t.adults || 'Взрослые' },
+      { key: 'seniors', title: t.pensioners || 'Пенсионеры' },
+    ];
+    res.json(items);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Не удалось получить категории тестов', details: e?.message });
+  }
+});
+
 app.get('/api/admin/tests/get', ensureAdmin, async (req, res) => {
   try {
     const rel = String(req.query.path || '');
@@ -167,10 +220,43 @@ app.put('/api/admin/tests/save', ensureAdmin, async (req, res) => {
     const body = req.body;
     if (typeof body !== 'object' || body === null) return res.status(400).json({ error: 'Ожидается JSON-объект' });
     const text = JSON.stringify(body, null, 2);
+    // Ensure parent directory exists
+    await fs.mkdir(path.dirname(full), { recursive: true });
     await fs.writeFile(full, text, 'utf8');
     res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: 'Не удалось сохранить файл', details: e?.message });
+  }
+});
+
+// Delete a tests folder recursively (admin)
+app.delete('/api/admin/tests/delete-folder', ensureAdmin, async (req, res) => {
+  try {
+    const rel = String(req.query.path || '').replace(/^\/+/, '');
+    if (!rel || rel.includes('..')) return res.status(400).json({ error: 'Некорректный путь' });
+    const full = path.join(TESTS_ROOT, rel);
+    if (!isInside(TESTS_ROOT, full)) return res.status(400).json({ error: 'Вне корня тестов' });
+
+    const st = await fs.stat(full).catch(() => null);
+    if (!st) return res.status(404).json({ error: 'Папка не найдена' });
+    if (!st.isDirectory()) return res.status(400).json({ error: 'Это не папка' });
+
+    // Remove recursively
+    // Node 20+ has fs.rm with recursive
+    await (fs as any).rm(full, { recursive: true, force: true }).catch(async () => {
+      // Fallback: manual delete
+      const entries = await fs.readdir(full, { withFileTypes: true });
+      for (const e of entries) {
+        const p = path.join(full, e.name);
+        if (e.isDirectory()) await (fs as any).rm(p, { recursive: true, force: true }).catch(()=>{});
+        else await fs.unlink(p).catch(()=>{});
+      }
+      await fs.rmdir(full).catch(()=>{});
+    });
+
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Не удалось удалить папку', details: e?.message });
   }
 });
 

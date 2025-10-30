@@ -14,7 +14,7 @@ export default function NavBar({ onStart }: { onStart: () => void }) {
   const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
+    const onScroll = () => setScrolled(window.scrollY > 0);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -31,7 +31,19 @@ export default function NavBar({ onStart }: { onStart: () => void }) {
     }
   };
   return (
-    <header ref={headerRef} className={`sticky top-3 z-40 w-[min(1180px,94%)] mx-auto transition-all ${scrolled ? 'backdrop-blur bg-white/70 shadow-lg' : 'backdrop-blur bg-white/50'} ${open ? 'rounded-t-2xl rounded-b-none border-b-0' : 'rounded-2xl'} border border-white/40 relative pointer-events-auto`}> 
+    <motion.header
+        ref={headerRef}
+        className={`sticky top-3 z-40 w-[min(1180px,94%)] mx-auto ${open ? 'rounded-t-2xl rounded-b-none border-b-0' : 'rounded-2xl'} border border-white/40 relative pointer-events-auto` }
+        initial={{ backgroundColor: 'rgba(255,255,255,0.50)', boxShadow: '0 0 0 rgba(0,0,0,0)' }}
+        animate={{
+          backgroundColor: scrolled ? 'rgba(255,255,255,0.70)' : 'rgba(255,255,255,0.50)',
+          boxShadow: scrolled ? '0px 12px 36px rgba(0,0,0,0.18)' : '0px 2px 8px rgba(0,0,0,0.04)'
+        }}
+        transition={{
+          backgroundColor: { duration: 0.16, ease: 'easeOut' },
+          boxShadow: { duration: 0.16, ease: 'easeOut' }
+        }}
+      > 
       <div className="flex items-center justify-between px-4 py-3" id="navbar-inner">
         <a href="#home" className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}uralsib_logo.svg`} alt="Уралсиб" className="h-8 w-auto"/>
@@ -77,6 +89,6 @@ export default function NavBar({ onStart }: { onStart: () => void }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </motion.header>
   );
 }

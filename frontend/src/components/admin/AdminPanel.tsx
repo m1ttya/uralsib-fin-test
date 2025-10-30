@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -51,8 +51,13 @@ const Svg = ({ path, className = '' }: { path: string; className?: string }) => 
 import { IconActionButton } from './IconActionButton';
 const RefreshIcon = () => <Svg path="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>;
 import { PlusIcon, PencilIcon, CheckIcon, XIcon, UploadIcon, LogoutIcon } from './icons';
+import PdfViewer from '../PdfViewer';
 const SaveIcon = () => <Svg path="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2M17 21V13H7v8"/>;
-const UndoIcon = () => <Svg path="M9 14H5l4-4 4 4H9a7 7 0 1 0 7 7"/>;
+const UndoIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+    <path d="M9 15L3 9m0 0l6-6M3 9h12a4 4 0 010 8h-3" />
+  </svg>
+);
 
 const EditIcon = () => <PencilIcon />;
 
@@ -481,11 +486,59 @@ function ArticlesManager() {
                       <input
                         value={titles[g.base] ?? g.base}
                         onChange={e=>setTitles(prev=>({ ...prev, [g.base]: e.target.value }))}
+                        onMouseDown={(e)=>e.stopPropagation()}
                         onClick={(e)=>e.stopPropagation()}
-                        className="border rounded-lg px-3 py-2 text-sm w-44 max-w-[12rem] shrink-0"
+                        onBlur={async (e) => {
+                          const oldBase = g.base;
+                          const newTitle = (e.currentTarget.value || '').trim() || oldBase;
+
+                          try {
+                            setSavingTitle(oldBase);
+
+                            // 1) Сохраняем метаданные названия (как и сейчас)
+                            const payload = { titles: { ...titles, [oldBase]: newTitle } };
+                            const res = await fetch('/api/admin/articles/meta', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
+                              body: JSON.stringify(payload),
+                            });
+                            if (!res.ok) throw new Error('Не удалось сохранить название');
+
+                            // 2) Если база изменилась — переименовываем файлы статьи на бэкенде
+                            if (newTitle !== oldBase) {
+                              const r = await fetch('/api/admin/articles/rename', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ oldBase, newBase: newTitle }),
+                              });
+
+                              if (!r.ok) {
+                                const errText = await r.text().catch(() => '');
+                                throw new Error(errText || 'Не удалось переименовать файлы статьи');
+                              }
+
+                              // 3) Обновляем локальное состояние
+                              await load();
+                              setTitles((prev) => {
+                                const next = { ...prev, [newTitle]: prev[oldBase] ?? newTitle } as Record<string, string>;
+                                delete (next as any)[oldBase];
+                                return next;
+                              });
+                              setSelectedBase(newTitle);
+                            }
+                          } catch (err: any) {
+                            setError(err?.message || 'Ошибка при сохранении/переименовании');
+                          } finally {
+                            setSavingTitle(null);
+                          }
+                        }}
+                        className="border rounded-lg px-3 py-2 text-sm w-52 max-w-[15rem] shrink-0"
                         placeholder="Введите название статьи"
                       />
-                      <IconActionButton title="Сохранить название" iconOnly disabled={savingTitle===g.base}
+                      {/* Сохранение теперь по blur, кнопку скрываем */}
+                      <IconActionButton title="Сохранить название" iconOnly disabled className="hidden"
                       onClick={async (ev)=>{
                         (ev as any)?.stopPropagation?.();
                         try {
@@ -508,7 +561,7 @@ function ArticlesManager() {
   onClick={(e)=>{ e.stopPropagation(); onDeleteGroup(g); }}
   title="Удалить"
   aria-label="Удалить статью"
-  className="p-2.5 rounded-lg hover:bg-red-50 text-red-600 shrink-0"
+  className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 shrink-0"
 >
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
     <path fillRule="evenodd" d="M10 8.586l3.536-3.536a1 1 0 111.414 1.414L11.414 10l3.536 3.536a1 1 0 01-1.414 1.414L10 11.414l-3.536 3.536a1 1 0 01-1.414-1.414L8.586 10 5.05 6.464A1 1 0 116.464 5.05L10 8.586z" clipRule="evenodd" />
@@ -556,7 +609,7 @@ function ArticlesManager() {
             {previewHtml ? (
               <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
             ) : previewPdfUrl ? (
-              <iframe src={previewPdfUrl} className="w-full h-[70vh] border-0" title="PDF Preview" />
+              <PdfViewer url={previewPdfUrl} className="w-full" />
             ) : (
               <div className="text-gray-500">Выберите HTML-статью или PDF, либо загрузите DOCX, чтобы посмотреть предпросмотр</div>
             )}
@@ -575,6 +628,9 @@ function TestsManager() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [json, setJson] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [savingTitleKey, setSavingTitleKey] = useState<string | null>(null);
 
   const loadTree = async () => {
     try {
@@ -592,6 +648,18 @@ function TestsManager() {
   };
 
   useEffect(()=>{ loadTree(); }, []);
+
+  useEffect(() => {
+    const loadMeta = async () => {
+      try {
+        const res = await fetch('/api/admin/tests/meta', { credentials: 'include' });
+        if (!res.ok) return;
+        const meta = await res.json();
+        setTitles(meta?.titles || {});
+      } catch {}
+    };
+    loadMeta();
+  }, []);
 
   const openFile = async (relPath: string) => {
     try {
@@ -620,6 +688,29 @@ function TestsManager() {
       setError(e?.message || 'Ошибка сохранения');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteFile = async () => {
+    if (!selectedPath) return;
+    if (!confirm(`Удалить тест "${selectedPath}"? Это действие нельзя отменить.`)) return;
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/tests/admin/delete?path=${encodeURIComponent(selectedPath)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as any)?.error || 'Не удалось удалить тест');
+      }
+      await loadTree();
+      setSelectedPath(null);
+      setJson(null);
+    } catch (e: any) {
+      setError(e?.message || 'Ошибка удаления теста');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -659,8 +750,10 @@ function TestsManager() {
     setJson((prev: any) => ({ ...prev, questions: prev.questions.filter((_: any, i: number) => i!==idx) }));
   };
 
-  const QuestionsEditor = () => {
-    const errs = validate(json);
+  const errs = useMemo(() => validate(json), [json]);
+
+  const QuestionsEditor: any = useMemo(() => React.memo((props: any) => {
+    const { json, errs, updateQuestion, removeQuestion, addQuestion, setJson } = props;
     return (
       <div className="space-y-4">
         {errs.length > 0 && (
@@ -674,17 +767,17 @@ function TestsManager() {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <div className="text-xs text-gray-500 mb-1">ID</div>
-            <input value={json.id||''} onChange={e=>setJson((p:any)=>({...p, id:e.target.value}))} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+            <input value={json.id||''} onChange={e=>setJson((p:any)=>({...p, id:e.target.value}))} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
           </label>
           <label className="block sm:col-span-1">
             <div className="text-xs text-gray-500 mb-1">Заголовок (title)</div>
-            <input value={json.title||''} onChange={e=>setJson((p:any)=>({...p, title:e.target.value}))} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+            <input value={json.title||''} onChange={e=>setJson((p:any)=>({...p, title:e.target.value}))} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
           </label>
         </div>
         <div className="text-sm font-semibold text-gray-800 mt-2">Вопросы</div>
         <div className="space-y-6">
           {json.questions.map((q: any, idx: number) => (
-            <div key={idx} className="border rounded-xl p-3">
+            <div key={q.id || idx} className="border rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-medium text-gray-700">Вопрос #{idx+1}</div>
                 <button onClick={()=>removeQuestion(idx)} className="inline-flex items-center gap-2 p-2.5 rounded-lg text-sm border border-red-200 bg-white hover:bg-red-50 text-red-600">
@@ -694,7 +787,7 @@ function TestsManager() {
               </div>
               <label className="block mb-2">
                 <div className="text-xs text-gray-500 mb-1">Текст вопроса</div>
-                <input value={q.text} onChange={e=>updateQuestion(idx,{ text:e.target.value })} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+                <input value={q.text} onChange={e=>updateQuestion(idx,{ text:e.target.value })} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
               </label>
               <div className="text-xs text-gray-500 mb-1">Варианты</div>
               <div className="space-y-2">
@@ -703,7 +796,7 @@ function TestsManager() {
                     <input type="radio" checked={q.correctIndex===oi} onChange={()=>updateQuestion(idx,{ correctIndex: oi })} />
                     <input value={opt} onChange={e=>{
                       const opts = q.options.slice(); opts[oi]=e.target.value; updateQuestion(idx,{ options: opts });
-                    }} className="flex-1 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+                    }} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="flex-1 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
                     <button onClick={()=>{
                       const opts = q.options.filter((_:any,i:number)=>i!==oi); updateQuestion(idx,{ options: opts, correctIndex: Math.min(q.correctIndex, opts.length-1) });
                     }} className="inline-flex items-center gap-2 p-2.5 rounded-lg text-sm border border-red-200 bg-white hover:bg-red-50 text-red-600"><XIcon /><span className="hidden sm:inline">Удалить</span></button>
@@ -715,7 +808,7 @@ function TestsManager() {
               </div>
               <label className="block mt-3">
                 <div className="text-xs text-gray-500 mb-1">Пояснение к правильному ответу</div>
-                <textarea value={q.correctExplanation||''} onChange={e=>updateQuestion(idx,{ correctExplanation:e.target.value })} className="w-full min-h-[80px] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+                <textarea value={q.correctExplanation||''} onChange={e=>updateQuestion(idx,{ correctExplanation:e.target.value })} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full min-h-[80px] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
               </label>
             </div>
           ))}
@@ -725,9 +818,9 @@ function TestsManager() {
         </div>
       </div>
     );
-  };
+  }), []);
 
-  const ImportForm = ({ onDone }: { onDone: ()=>void }) => {
+ const ImportForm = ({ onDone }: { onDone: ()=>void }) => {
     // получаем список корневых папок из дерева, если оно уже загружено
     const rootFolders = Object.keys(tree?.folders || {});
     const [folder, setFolder] = useState<string>(rootFolders[0] || 'adults');
@@ -795,7 +888,7 @@ function TestsManager() {
           <div className="flex items-center gap-2">
             <label className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg border ${busy? 'opacity-60 pointer-events-none':''} border-gray-200 bg-white hover:bg-gray-50 cursor-pointer w-fit max-w-full`}>
               <input type="file" accept=".docx" className="hidden" onChange={onFile} />
-              <span className="inline-flex items-center gap-2"><UploadIcon className="text-gray-700" /><span className="hidden sm:inline">Импорт DOCX</span></span>
+              <span className="inline-flex items-center gap-2"><UploadIcon className="text-gray-700" /><span className="hidden sm:inline">Импорт</span></span>
             </label>
             <button disabled={busy || !fileName.trim() || !title.trim() || (folder==='__new__' && !newFolder.trim())} onClick={async ()=>{
               try {
@@ -827,7 +920,61 @@ function TestsManager() {
       <ul className="space-y-2">
         {entries.map(([name, child]) => (
           <li key={base + name}>
-            <div className="text-sm font-medium text-gray-700 mb-1">{name}</div>
+            <div className="flex items-center justify-between mb-1 group">
+              <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <span>{name}</span>
+                <input
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2 py-0.5 border rounded hidden sm:inline-block w-36"
+                  placeholder="Отображаемое имя"
+                  value={titles[name] ?? (name==='children' ? 'Школьники' : name==='adults' ? 'Взрослые' : name==='pensioners' ? 'Пенсионеры' : name)}
+                  onMouseDown={e=>e.stopPropagation()}
+                  onClick={e=>e.stopPropagation()}
+                  onChange={e => setTitles(prev => ({ ...prev, [name]: e.target.value }))}
+                  onBlur={async () => {
+                    try {
+                      setSavingTitleKey(name);
+                      const payload = { titles: { ...titles } };
+                      const res = await fetch('/api/admin/tests/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                      if (!res.ok) throw new Error('Не удалось сохранить отображаемое имя');
+                    } catch (e:any) {
+                      setError(e?.message || 'Ошибка сохранения названия категории');
+                    } finally {
+                      setSavingTitleKey(null);
+                    }
+                  }}
+                />
+              </div>
+              <IconActionButton
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Удалить папку"
+                variant="danger"
+                iconOnly
+                onClick={async () => {
+                  const folderPath = `${base}${name}`;
+                  if (!confirm(`Удалить папку "${folderPath}" со всем содержимым?`)) return;
+                  try {
+                    const res = await fetch(`/api/admin/tests/delete-folder?path=${encodeURIComponent(folderPath)}`, {
+                      method: 'DELETE',
+                      credentials: 'include',
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                      throw new Error((data as any)?.error || 'Не удалось удалить папку');
+                    }
+                    // Если открытый файл внутри папки — сбрасываем редактор
+                    if (selectedPath && selectedPath.startsWith(folderPath + '/')) {
+                      setSelectedPath(null);
+                      setJson(null);
+                    }
+                    await loadTree();
+                  } catch (e: any) {
+                    setError(e?.message || 'Ошибка удаления папки');
+                  }
+                }}
+              >
+                <XIcon />
+              </IconActionButton>
+            </div>
             <div className="ml-4">
               {child.files?.map((f) => (
                 <div key={f} className="flex items-center justify-between group">
@@ -893,14 +1040,25 @@ function TestsManager() {
         <div className="flex items-center justify-between mb-3">
           <div className="font-semibold text-gray-800">{selectedPath ? selectedPath : 'Редактор тестов'}</div>
           {selectedPath && (
-            <button onClick={saveFile} disabled={saving || !!validate(json).length} className="px-3 h-9 rounded-lg bg-primary text-white hover:bg-secondary disabled:opacity-50 inline-flex items-center gap-2"><SaveIcon /> <span className="hidden sm:inline">{saving? 'Сохранение…' : 'Сохранить'}</span></button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={deleteFile}
+                disabled={deleting}
+                className="px-3 h-9 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 inline-flex items-center gap-2"
+                title="Удалить тест"
+              >
+                <XIcon />
+                <span className="hidden sm:inline">{deleting ? 'Удаление…' : 'Удалить'}</span>
+              </button>
+              <button onClick={saveFile} disabled={saving || errs.length > 0} className="px-3 h-9 rounded-lg bg-primary text-white hover:bg-secondary disabled:opacity-50 inline-flex items-center gap-2"><SaveIcon /> <span className="hidden sm:inline">{saving? 'Сохранение…' : 'Сохранить'}</span></button>
+            </div>
           )}
         </div>
         <div className="border rounded-xl bg-white p-3 min-h-[300px]">
           {!json ? (
             <div className="text-gray-500">Выберите тест слева, чтобы открыть редактор вопросов</div>
           ) : Array.isArray(json?.questions) ? (
-            <QuestionsEditor />
+            <QuestionsEditor json={json} errs={errs} updateQuestion={updateQuestion} removeQuestion={removeQuestion} addQuestion={addQuestion} setJson={setJson} />
           ) : (
             <div>
               <div className="text-sm text-gray-600 mb-2">Структура файла не распознана как тест. Показан сырой JSON.</div>

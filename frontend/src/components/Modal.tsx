@@ -43,7 +43,11 @@ export default function Modal({ open, onClose, children, title }: { open: boolea
           >
             <div className="p-6 border-b border-gray-100">
               {title && <div className="text-xl font-bold text-primary">{title}</div>}
-              <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-primary" aria-label="Закрыть">✕</button>
+              <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-primary" aria-label="Закрыть">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path fillRule="evenodd" d="M10 8.586l3.536-3.536a1 1 0 111.414 1.414L11.414 10l3.536 3.536a1 1 0 01-1.414 1.414L10 11.414l-3.536 3.536a1 1 0 01-1.414-1.414L8.586 10 5.05 6.464A1 1 0 116.464 5.05L10 8.586z" clipRule="evenodd" />
+                </svg>
+              </button>
             </div>
             {/* Scrollable content area so scrollbar doesn't touch rounded edges */}
             <div className="max-h-[70vh] overflow-auto px-6 py-4 modal-scroll-area">

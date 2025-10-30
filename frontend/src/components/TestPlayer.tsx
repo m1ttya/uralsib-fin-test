@@ -53,7 +53,7 @@ export default function TestPlayer({ test, onRestart }: Props) {
 
   return (
             <div className="modal-overlay">
-              <div className="test-modal-paper w-full flex flex-col">
+              <div className="test-modal-paper flex flex-col" style={{ width: 'min(900px, 94vw)' }}>
         {/* Логотип в верхней части - БЕЗ анимации */}
         <div className="flex justify-center py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8">
             <img 
