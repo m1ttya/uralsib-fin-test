@@ -1,0 +1,70 @@
+CREATE TABLE IF NOT EXISTS users(user_id SERIAL PRIMARY KEY NOT NULL,
+                phone VARCHAR(12) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                password VARCHAR(255) NOT NULL
+                );
+CREATE TABLE IF NOT EXISTS categories(category_id SERIAL PRIMARY KEY NOT NULL,
+                category_name VARCHAR(50)
+                );
+CREATE TABLE IF NOT EXISTS topics(topic_id SERIAL PRIMARY KEY NOT NULL,
+                name VARCHAR(100) NOT NULL
+                );
+CREATE TABLE IF NOT EXISTS articles(article_id SERIAL PRIMARY KEY,
+                content XML
+                );
+CREATE TABLE IF NOT EXISTS admins(admin_id SERIAL PRIMARY KEY NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                password VARCHAR(255) NOT NULL
+                );
+CREATE TABLE IF NOT EXISTS tests(test_id SERIAL PRIMARY KEY NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                category INTEGER REFERENCES categories NOT NULL,
+                is_active BOOLEAN NOT NULL,
+                created_by INTEGER REFERENCES admins NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+                );
+CREATE TABLE IF NOT EXISTS test_updates(upd_id SERIAL PRIMARY KEY NOT NULL,
+                test INTEGER REFERENCES questions NOT NULL,
+                updated_at TIMESTAMP DEFAULT NOW(),
+                updated_by INTEGER REFERENCES admins NOT NULL
+                );
+CREATE TABLE IF NOT EXISTS questions(question_id SERIAL PRIMARY KEY NOT NULL,
+                test_id INTEGER REFERENCES tests NOT NULL,
+                question_text TEXT NOT NULL,
+                explanation TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                created_by INTEGER REFERENCES admins
+                );
+CREATE TABLE IF NOT EXISTS options (option_id SERIAL PRIMARY KEY NOT NULL,
+                question_id INTEGER REFERENCES questions,
+                option_text TEXT NOT NULL,
+                is_correct BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT NOW(),
+                created_by INTEGER REFERENCES admins
+                );
+CREATE TABLE IF NOT EXISTS test_attempts (attempt_id SERIAL PRIMARY KEY,
+                test_id INTEGER REFERENCES tests,
+                user_id INTEGER REFERENCES users,
+                percentage DECIMAL(5,2) NOT NULL,
+                started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                is_completed BOOLEAN DEFAULT FALSE,
+                completed_at TIMESTAMP --запись после завершения теста
+                );
+CREATE TABLE IF NOT EXISTS user_anwers(useransw_id SERIAL PRIMARY KEY,
+                attempt_id INT REFERENCES attempts,
+                question_id INT REFERENCES questions,
+                option_id INTEGER REFERENCES options,
+                is_correct BOOLEAN NOT NULL,
+                started_at TIMESTAMP DEFAULT NOW(),
+                answered_at TIMESTAMP --запись после ответа
+                );
+
+CREATE TABLE IF NOT EXISTS questions_topics(qt_id SERIAL PRIMARY KEY,
+                question_id INTEGER REFERENCES questions,
+                topic_id INTEGER REFERENCES topics,
+                );
+CREATE TABLE IF NOT EXISTS articles_topics(at_id SERIAL PRIMARY KEY,
+                article_id INTEGER REFERENCES articles,
+                topic_id INTEGER REFERENCES topics,
+                );

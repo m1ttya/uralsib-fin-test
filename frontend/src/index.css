@@ -1,4 +1,13 @@
 /* frontend/src/index.css */
+
+/* Subtle floating animation used by BackgroundParallax */
+@keyframes bgFloat {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+.bg-float { animation: bgFloat 10s ease-in-out infinite; }
+
 /* Uralsib local fonts */
 @font-face {
   font-family: 'Uralsib-Regular';

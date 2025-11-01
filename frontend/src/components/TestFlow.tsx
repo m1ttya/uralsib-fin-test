@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import QuestionCard from './QuestionCard';
 import ResultsView from './ResultsView';
 import CloseButton from './CloseButton';
+
 import ExitConfirmModal from './ExitConfirmModal';
 
 type FlowState = 'categories' | 'test' | 'results';
@@ -175,7 +176,10 @@ export default function TestFlow({ onRestart }: Props) {
   const handleConfirmExit = () => { setShowExitConfirm(false); onRestart(); };
   const handleCancelExit = () => setShowExitConfirm(false);
 
-  const currentQuestion = selectedTest?.questions[currentQuestionIndex];
+ // Track if article ("Развитие") is opened inside results view
+ const [articleOpen, setArticleOpen] = useState(false);
+
+ const currentQuestion = selectedTest?.questions[currentQuestionIndex];
 
   // Sync progress with current question index
   useEffect(() => {
@@ -193,9 +197,11 @@ export default function TestFlow({ onRestart }: Props) {
         layout
         transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1.0] }}
         style={{ willChange: 'width, height', width: flowState === 'results' ? 'min(1200px, 98vw)' : 'min(960px, 94vw)' }}
-        className={`${flowState === 'categories' ? 'category-modal-paper' : flowState === 'results' ? 'results-modal-paper overflow-hidden' : 'test-modal-paper'} flex flex-col relative`}
+        className={`${flowState === 'categories' ? 'category-modal-paper' : flowState === 'results' ? 'results-modal-paper' : 'test-modal-paper'} flex flex-col relative min-h-0 overflow-visible`}
       >
-        <CloseButton onClick={handleCloseClick} isWhite={flowState === 'results'} />
+        {flowState === 'results' && !articleOpen ? (
+          <CloseButton onClick={handleCloseClick} isWhite={true} />
+        ) : null}
 
         {/* Логотип */}
         {flowState !== 'results' && (
@@ -235,7 +241,7 @@ export default function TestFlow({ onRestart }: Props) {
               >
                 {selectedTest && (
                   <div className="w-full">
-                      <ResultsView test={selectedTest as any} answers={answers} correctByQ={(selectedTest as any).__correctByQ} onRestart={handleRestartFlow} />
+                      <ResultsView test={selectedTest as any} answers={answers} correctByQ={(selectedTest as any).__correctByQ} onRestart={handleRestartFlow} onToggleArticle={(open)=>setArticleOpen(!!open)} />
                   </div>
                 )}
               </motion.div>

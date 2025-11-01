@@ -3,9 +3,10 @@ import LandingPage from './components/LandingPage';
 import LoginModal from './components/LoginModal';
 import TestFlow from './components/TestFlow';
 import AdminPanel from './components/admin/AdminPanel';
+import BackgroundParallax from './components/BackgroundParallaxNew';
 import AdminGate from './components/admin/AdminGate';
 
-type AppState = 'landing' | 'login' | 'test-flow' | 'admin';
+type AppState = 'landing' | 'test-flow' | 'admin';
 
 function App() {
   const [appState, setAppState] = useState<AppState>(() => (window.location.hash === '#admin' ? 'admin' : 'landing'));
@@ -23,8 +24,10 @@ function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  const [loginOpen, setLoginOpen] = useState(false);
+
   const handleStartTest = () => {
-    setAppState('login');
+    setLoginOpen(true);
   };
 
   const handleLogin = () => {
@@ -33,13 +36,13 @@ function App() {
   };
 
   const handleSkip = () => {
-    // Сначала закрываем модальное окно входа плавно
-    // Затем сразу переходим к тесту без задержки
+    // Переходим к тесту, не размонтируя лэндинг
+    setLoginOpen(false);
     setAppState('test-flow');
   };
 
   const handleCloseLogin = () => {
-    setAppState('landing');
+    setLoginOpen(false);
   };
 
   const handleRestart = () => {
@@ -51,19 +54,6 @@ function App() {
     switch (appState) {
       case 'landing':
         return <LandingPage onStartTest={handleStartTest} />;
-      
-      case 'login':
-        return (
-          <>
-            <LandingPage onStartTest={handleStartTest} />
-            <LoginModal
-              isOpen={true}
-              onClose={handleCloseLogin}
-              onLogin={handleLogin}
-              onSkip={handleSkip}
-            />
-          </>
-        );
       
       case 'test-flow':
         return <TestFlow onRestart={handleRestart} />;
@@ -79,8 +69,17 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full relative">
+      {appState !== 'admin' && <BackgroundParallax />}
       {renderCurrentState()}
+      {appState !== 'admin' && (
+        <LoginModal
+          isOpen={loginOpen}
+          onClose={handleCloseLogin}
+          onLogin={handleLogin}
+          onSkip={handleSkip}
+        />
+      )}
     </div>
   );
 }

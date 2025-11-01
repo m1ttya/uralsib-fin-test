@@ -1,7 +1,7 @@
 // frontend/src/components/ResultsView.tsx
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-type BackendQuestion = { id: string; text: string; options: string[] };
+type BackendQuestion = { id: string; text: string; options: string[]; tags?: Array<{ category?: string; linkUrl?: string; title?: string }> };
 // Допускаем моковую модель: может быть correctIndex
 type MockQuestion = { text: string; options: string[]; correctIndex: number };
 type BackendTest = { id: string; title: string; category: string; variant?: string; questions: (BackendQuestion | MockQuestion)[] };
@@ -11,9 +11,10 @@ type Props = {
   answers: (number | null)[]; // индексы в ПЕРЕТАСОВАННОМ порядке
   correctByQ?: Record<string, number>; // правильные индексы в ПЕРЕТАСОВАННОМ порядке по questionId
   onRestart?: () => void;
+  onToggleArticle?: (open: boolean) => void;
 };
 
-export default function ResultsView({ test, answers, correctByQ, onRestart }: Props) {
+export default function ResultsView({ test, answers, correctByQ, onRestart, onToggleArticle }: Props) {
   // Ensure modal container width is controlled when showing results
   useEffect(() => {
     // Try to find the nearest test modal container and adjust its width
@@ -88,6 +89,17 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
     }).catch(() => {});
   }, []);
 
+  // Загружаем только продукты (как было, когда работала карточка «Рекомендуем продукт»)
+  useEffect(() => {
+    const url = `${import.meta.env.BASE_URL}api/products_by_topic.json?v=${Date.now()}`;
+    fetch(url, { cache: 'no-store' }).then(async (r) => {
+      try {
+        const data = await r.json();
+        setByTopic(data || {});
+      } catch {}
+    }).catch(() => {});
+  }, []);
+
   // Простая классификация темы вопроса по ключевым словам
   const detectTopic = (text: string): string => {
     const t = (text || '').toLowerCase();
@@ -101,23 +113,108 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
     return 'budgeting';
   };
 
-  // Набираем статистику по темам
+  // Набираем статистику по тегам и темам (fallback)
+  const tagStats = new Map<string, { total: number; correct: number; tag: any }>();
   const topicStats = new Map<string, { total: number; correct: number }>();
   test.questions.forEach((q: any, idx: number) => {
-    const topic = detectTopic(q.text || '');
-    const s = topicStats.get(topic) || { total: 0, correct: 0 };
-    s.total += 1;
     const ans = answers[idx];
     const correctShuffled = correctByQ && q?.id ? correctByQ[q.id] : (typeof (q as any)?.correctIndex === 'number' ? (q as any).correctIndex : undefined);
-    if (typeof ans === 'number' && typeof correctShuffled === 'number' && ans === correctShuffled) s.correct += 1;
-    topicStats.set(topic, s);
-  });
-  const scoredTopics = Array.from(topicStats.entries()).map(([k, v]) => ({ key: k, score: v.correct / Math.max(1, v.total) }))
-    .sort((a,b)=>b.score-a.score);
+    const isCorrect = typeof ans === 'number' && typeof correctShuffled === 'number' && ans === correctShuffled;
 
-  const topTopics = scoredTopics.filter(t=>t.score >= 0.4).slice(0,2).map(t=>t.key);
-  const pool = topTopics.flatMap(t => byTopic[t] || []);
-  const recs = (pool.length ? pool : (byTopic['budgeting'] || [])).slice(0,3);
+    // Теги
+    const tags: any[] = Array.isArray(q?.tags) ? q.tags : [];
+    if (tags.length > 0) {
+      tags.forEach((t:any) => {
+        const key = t?.linkUrl || `${t?.category || ''}:${t?.title || ''}`;
+        const s = tagStats.get(key) || { total: 0, correct: 0, tag: t };
+        s.total += 1;
+        if (isCorrect) s.correct += 1;
+        tagStats.set(key, s);
+      });
+    } else {
+      // Fallback на темы по ключевым словам
+      const topic = detectTopic(q.text || '');
+      const s = topicStats.get(topic) || { total: 0, correct: 0 };
+      s.total += 1;
+      if (isCorrect) s.correct += 1;
+      topicStats.set(topic, s);
+    }
+  });
+
+  // Лучший/худший тег
+  const scoredTags = Array.from(tagStats.values()).map(v => ({ key: v.tag?.linkUrl || `${v.tag?.category || ''}:${v.tag?.title || ''}`, score: v.correct / Math.max(1, v.total), tag: v.tag, total: v.total }))
+    .sort((a,b)=>b.score-a.score);
+  const bestTag = scoredTags[0] || null;
+  const worstTag = scoredTags[scoredTags.length-1] || null;
+
+  // Рекомендации по продуктам: лучший тег -> продукт той же категории/ссылки
+  let productRecommendation: Product | null = null;
+  if (bestTag?.tag) {
+    const t = bestTag.tag;
+    if (t.linkUrl) {
+      productRecommendation = { title: t.title || 'Подходящий продукт', linkUrl: t.linkUrl, linkText: t.linkText };
+    } else if (t.category && byTopic[t.category]) {
+      const found = byTopic[t.category].find(p => p.title === t.title) || byTopic[t.category][0];
+      if (found) productRecommendation = found;
+    }
+  }
+  if (!productRecommendation) {
+    // Fallback на темы
+    const scoredTopics = Array.from(topicStats.entries()).map(([k, v]) => ({ key: k, score: v.correct / Math.max(1, v.total) }))
+      .sort((a,b)=>b.score-a.score);
+    const topTopics = scoredTopics.filter(t=>t.score >= 0.4).slice(0,2).map(t=>t.key);
+    const pool = topTopics.flatMap(t => byTopic[t] || []);
+    const recs = (pool.length ? pool : (byTopic['budgeting'] || [])).slice(0,1);
+    productRecommendation = recs[0] || null;
+  }
+
+  // Загрузка опубликованных статей для рекомендаций
+  type ArticleMeta = { id: string; title: string; tags?: any[] };
+  const [articles, setArticles] = useState<ArticleMeta[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${import.meta.env.BASE_URL}api/articles`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then((list) => { if (!cancelled) setArticles(Array.isArray(list) ? list : []); })
+      .catch(()=> { if (!cancelled) setArticles([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Рекомендации по статьям: худший тег -> статья, у которой совпадает тег
+  let articleRecommendation: { id: string; title: string } | null = null;
+  if (worstTag?.tag && articles.length > 0) {
+    const t = worstTag.tag;
+    const matchByLink = (a:any) => Array.isArray(a.tags) && a.tags.some((at:any)=> at?.linkUrl && at.linkUrl === t.linkUrl);
+    const matchByCategory = (a:any) => Array.isArray(a.tags) && a.tags.some((at:any)=> !t.linkUrl && t.category && at?.category === t.category);
+    const found = articles.find(a => matchByLink(a) || matchByCategory(a));
+    if (found) articleRecommendation = { id: found.id, title: found.title };
+  }
+
+  const [articleContent, setArticleContent] = useState<{ id: string; title: string; html: string } | null>(null);
+  useEffect(() => { if (onToggleArticle) onToggleArticle(!!articleContent); }, [!!articleContent]);
+
+  const openArticleSafely = async (id: string, title?: string) => {
+    const base = import.meta.env.BASE_URL || '/';
+    try {
+      const res = await fetch(`${base}api/articles/${id}/html`, { cache: 'no-store' });
+      if (res.ok) {
+        const html = await res.text();
+        setArticleContent({ id, title: title || 'Статья', html });
+        return;
+      }
+    } catch {}
+    // Фоллбек на content?format=html
+    try {
+      const res2 = await fetch(`${base}api/articles/${id}/content?format=html`, { cache: 'no-store' });
+      if (res2.ok) {
+        const html2 = await res2.text();
+        setArticleContent({ id, title: title || 'Статья', html: html2 });
+        return;
+      }
+    } catch {}
+    // Если не удалось загрузить внутрь окна, можно последним шагом открыть в новой вкладке
+    try { window.open(`${base}api/articles/${id}/content?format=html`, '_blank', 'noopener,noreferrer'); } catch {}
+  };
 
   const getResultMessage = () => {
     if (score >= 90) return 'Превосходно!';
@@ -177,15 +274,6 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
     }
     
     // Добавляем универсальные рекомендации
-    if (correctCount < test.questions.length) {
-      recommendations.push({
-        title: 'Изучите материалы по слабым темам',
-        description: `Проработайте ${test.questions.length - correctCount} вопрос(ов), где были ошибки`,
-        icon: '🔍',
-        category: 'Развитие'
-      });
-    }
-    
     recommendations.push({
       title: 'Подключите мобильный банк',
       description: 'Управляйте финансами удобно через приложение Уралсиб',
@@ -198,6 +286,42 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
   };
 
   const personalRecommendations = getPersonalRecommendations();
+
+  // Если открыта статья для "Развития" — показываем её вместо окна результатов
+  if (articleContent) {
+    return (
+      <motion.div
+        key="article-view"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.25 }}
+        className="relative flex flex-col h-full bg-white min-h-0"
+      >
+        {/* Фиксированный заголовок: sticky, внутри прокручиваемого контейнера */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="sticky top-0 z-20 bg-white border-b">
+            <div className="flex items-center justify-between px-4 py-3">
+              <h1 className="text-lg font-semibold truncate mr-3">{articleContent.title}</h1>
+              <button
+                type="button"
+                onClick={() => setArticleContent(null)}
+                className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90"
+              >
+                Назад к рекомендациям
+              </button>
+            </div>
+          </div>
+          <div className="px-4 pb-4 pr-3">
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: articleContent.html }}
+            />
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -350,7 +474,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
                 type="button"
                 style={{ pointerEvents: 'auto' }}
               >
-                Открыть счёт в Уралсибе
+                Открыть счёт в Уралсиб
               </button>
               
               {score < 80 && (
@@ -394,14 +518,61 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
               </div>
             </div>
             
-            {/* Сетка рекомендаций */}
+            {/* Сетка рекомендаций: 1 продукт (лучший тег) + 1 статья (худший тег) + персональные */}
             <div className="space-y-4">
-              {personalRecommendations.slice(0, 3).map((rec, idx) => (
+              {/* Рекомендованный продукт по лучшему тегу */}
+              {productRecommendation && (
+                <motion.div
+                  key={`best-product-${productRecommendation.linkUrl}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 }}
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/30 transition-all duration-300 group cursor-pointer backdrop-blur-sm"
+                  onClick={() => handleGoToBank(productRecommendation.linkUrl)}
+                >
+                  <div className="text-2xl flex-shrink-0">🏦</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full font-medium">Рекомендуем продукт</span>
+                    </div>
+                    <h4 className="text-white font-semibold text-base mb-1 group-hover:text-white/90 transition-colors">
+                      {productRecommendation.title}
+                    </h4>
+                    <p className="text-white/70 text-sm leading-relaxed">Рекомендуем продукт на основе ваших сильных ответов</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Рекомендованная статья по худшему тегу */}
+              {articleRecommendation && (
+                <motion.div
+                  key={`worst-article-${articleRecommendation.id}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/30 transition-all duration-300 group cursor-pointer backdrop-blur-sm"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); openArticleSafely(articleRecommendation.id, articleRecommendation.title); }}
+                >
+                  <div className="text-2xl flex-shrink-0">📖</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full font-medium">Развитие</span>
+                    </div>
+                    <h4 className="text-white font-semibold text-base mb-1 group-hover:text-white/90 transition-colors">
+                      {articleRecommendation.title}
+                    </h4>
+                    <p className="text-white/70 text-sm leading-relaxed">Рекомендуем материал для подтягивания слабой темы</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Остальные персональные рекомендации (оставляем одну карточку) */}
+              {personalRecommendations.slice(0, 1).map((rec, idx) => (
                 <motion.div
                   key={rec.title}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + idx * 0.1 }}
+                  transition={{ delay: 0.35 + idx * 0.1 }}
                   className="flex items-start gap-4 p-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/30 transition-all duration-300 group cursor-pointer backdrop-blur-sm"
                   onClick={() => handleGoToBank('https://uralsib.ru/')}
                 >
@@ -421,6 +592,26 @@ export default function ResultsView({ test, answers, correctByQ, onRestart }: Pr
                   </div>
                 </motion.div>
               ))}
+
+              {articleContent && (
+                <div className="mt-6 p-4 bg-white rounded-2xl text-gray-900 max-h-[60vh] overflow-auto">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold mr-4 truncate">{articleContent.title}</h3>
+                    <button
+                      type="button"
+                      onClick={() => setArticleContent(null)}
+                      className="px-3 py-1 rounded-lg bg-primary text-white hover:bg-primary/90"
+                    >
+                      Назад к рекомендациям
+                    </button>
+                  </div>
+                  <div
+                    className="article-content text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: articleContent.html }}
+                  />
+                </div>
+              )}
+
             </div>
           </motion.div>
         </div>

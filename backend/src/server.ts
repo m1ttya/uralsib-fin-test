@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { testsRouter } from './tests/router';
+import articlesRouter from './articles/router';
 import { attachAuth, ensureAdmin } from './auth';
 import fs from 'fs/promises';
 import multer from 'multer';
@@ -21,6 +22,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/tests', testsRouter);
+app.use('/api/articles', articlesRouter);
 
 // Static for articles storage (moved to backend/uploads/articles)
 const ARTICLES_DIR = path.resolve(__dirname, '../uploads/articles');

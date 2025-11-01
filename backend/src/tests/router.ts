@@ -10,6 +10,7 @@ type Question = {
   correctIndex: number;
   // Optional: explanation only for the correct answer (from DOCX)
   correctExplanation?: string;
+  tags?: any[];
 };
 
 type TestData = {
@@ -87,7 +88,7 @@ function sanitizeTestForClient(test: TestData, session: Session) {
     const q = questionById[qid];
     const map = session.shuffledOptionsByQid[qid];
     const shuffledOptions = map.map(idx => q.options[idx]);
-    return { id: q.id, text: q.text, options: shuffledOptions };
+    return { id: q.id, text: q.text, options: shuffledOptions, tags: (q as any).tags };
   });
   return { id: test.id, title: test.title, category: test.category, variant: test.variant, questions };
 }

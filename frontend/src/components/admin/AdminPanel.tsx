@@ -310,7 +310,13 @@ function ProductsEditor() {
   );
 }
 
+import ArticlesManagerComponent from './ArticlesManager';
+
 function ArticlesManager() {
+  return <ArticlesManagerComponent />;
+}
+
+function ArticlesManagerOld() {
   type FileItem = { name: string; size: number; mtime: number };
   type Group = { base: string; docx?: FileItem; html?: FileItem; pdf?: FileItem; others: FileItem[] };
 
@@ -621,6 +627,13 @@ function ArticlesManager() {
 }
 
 function TestsManager() {
+  type ProductItem = { title: string; linkUrl: string; linkText?: string; category?: string };
+  const [productsByTopicForTests, setProductsByTopicForTests] = useState<Record<string, ProductItem[]>>({});
+  useEffect(() => {
+    fetch('/api/admin/products_by_topic', { credentials: 'include' })
+      .then(r => r.json()).then((d)=> setProductsByTopicForTests(d || {})).catch(()=>setProductsByTopicForTests({}));
+  }, []);
+
   type Node = { files: string[]; folders: Record<string, Node> };
   const [tree, setTree] = useState<Node | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -810,6 +823,44 @@ function TestsManager() {
                 <div className="text-xs text-gray-500 mb-1">Пояснение к правильному ответу</div>
                 <textarea value={q.correctExplanation||''} onChange={e=>updateQuestion(idx,{ correctExplanation:e.target.value })} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full min-h-[80px] border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
               </label>
+
+              <div className="mt-3">
+                <div className="text-xs text-gray-500 mb-1">Теги вопроса (выберите продукты)</div>
+                <div className="space-y-2">
+                  {Object.keys((props.productsByTopicForTests||{})).length === 0 ? (
+                    <div className="text-xs text-gray-500">Продукты ещё не настроены</div>
+                  ) : (
+                    Object.entries(props.productsByTopicForTests||{}).map(([cat, items]) => (
+                      <div key={cat} className="border rounded p-2">
+                        <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">{cat}</div>
+                        <div className="flex flex-wrap gap-2">
+                          {items.map((it) => {
+                            const selected = Array.isArray(q.tags) && q.tags.some((t:any)=>t.linkUrl===it.linkUrl);
+                            return (
+                              <button
+                                type="button"
+                                key={it.linkUrl}
+                                onClick={() => {
+                                  const current = Array.isArray(q.tags) ? q.tags.slice() : [];
+                                  const exists = current.some((t:any)=>t.linkUrl===it.linkUrl);
+                                  const next = exists ? current.filter((t:any)=>t.linkUrl!==it.linkUrl) : [...current, { ...it, category: cat }];
+                                  updateQuestion(idx, { tags: next });
+                                }}
+                                className={`px-2 py-1 rounded-full text-xs border ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                              >
+                                {(it.title || '').replace(/^https?:\/\//,'')}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {!!(q.tags||[]).length && (
+                  <div className="mt-1 text-xs text-gray-500">Выбрано: {(q.tags||[]).length}</div>
+                )}
+              </div>
             </div>
           ))}
           <div>
@@ -1058,7 +1109,7 @@ function TestsManager() {
           {!json ? (
             <div className="text-gray-500">Выберите тест слева, чтобы открыть редактор вопросов</div>
           ) : Array.isArray(json?.questions) ? (
-            <QuestionsEditor json={json} errs={errs} updateQuestion={updateQuestion} removeQuestion={removeQuestion} addQuestion={addQuestion} setJson={setJson} />
+            <QuestionsEditor json={json} errs={errs} updateQuestion={updateQuestion} removeQuestion={removeQuestion} addQuestion={addQuestion} setJson={setJson} productsByTopicForTests={productsByTopicForTests} />
           ) : (
             <div>
               <div className="text-sm text-gray-600 mb-2">Структура файла не распознана как тест. Показан сырой JSON.</div>

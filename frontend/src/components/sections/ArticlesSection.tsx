@@ -4,12 +4,11 @@ import PdfViewer from '../PdfViewer';
 import { motion } from 'framer-motion';
 
 type Article = {
-  base: string;
+  id: string;
   title: string;
-  htmlName?: string;
-  url?: string; // /articles/xxx.html
-  hasPdf?: boolean;
-  pdfUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  tags?: any[];
 };
 
 export default function ArticlesSection() {
@@ -44,18 +43,12 @@ export default function ArticlesSection() {
       setError(null);
       setHtml('');
       setPdfUrl(null);
-      if (a.url) {
-        setPdfLoading(false);
-        // Загружаем готовый HTML напрямую, без mammoth
-        const res = await fetch(a.url, { cache: 'no-store' });
-        if (!res.ok) throw new Error('Не удалось загрузить статью');
-        const text = await res.text();
-        setHtml(text);
-      } else if (a.pdfUrl) {
-        setPdfLoading(true);
-        // Показываем PDF во всплывающем окне через iframe
-        setPdfUrl(a.pdfUrl);
-      }
+      
+      // Загружаем содержимое статьи из нового API
+      const res = await fetch(`/api/articles/${a.id}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Не удалось загрузить статью');
+      const articleData = await res.json();
+      setHtml(articleData.content);
     } catch (e: any) {
       setError(e?.message || 'Ошибка при загрузке статьи');
     } finally {
@@ -76,25 +69,38 @@ export default function ArticlesSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((a, i) => (
               <motion.button
-                key={a.htmlName || a.base}
-                onClick={() => {
-                  if (a.url || a.pdfUrl) openArticle(a);
-                }}
+                key={a.id}
+                onClick={() => openArticle(a)}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
                 className="text-left p-7 md:p-8 rounded-3xl bg-white/70 backdrop-blur shadow-md border border-white/60 hover:shadow-lg transition-shadow"
               >
-                <div className="font-bold text-secondary text-xl md:text-2xl leading-snug">{a.title || a.base}</div>
-                <div className="text-gray-600 text-sm mt-2">{(a.url || a.pdfUrl) ? 'Нажмите, чтобы открыть' : 'Нет контента'}</div>
+                <div className="font-bold text-secondary text-xl md:text-2xl leading-snug">{(a.title || '').replace(/^Imported:\s*/i, '').replace(/\.(pdf|docx)$/i, '').trim()}</div>
+                <div className="text-gray-600 text-sm mt-2">
+                  Нажмите, чтобы открыть
+                  {a.tags && a.tags.length > 0 && (
+                    <div className="mt-1">
+                      {a.tags.slice(0, 3).map((tag, idx) => {
+                        const label = typeof tag === 'string' ? tag : (tag?.title || tag?.linkText || tag?.category || 'тег');
+                        const key = (typeof tag === 'string' ? tag : (tag?.linkUrl || tag?.title || tag?.category || idx));
+                        return (
+                          <span key={key} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">
+                            {label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </motion.button>
             ))}
           </div>
         )}
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title={current?.title || current?.base}>
+      <Modal open={open} onClose={() => setOpen(false)} title={((current?.title || 'Статья').replace(/^Imported:\s*/i, '').replace(/\.(pdf|docx)$/i, '').trim())}>
         {loading && <div className="text-gray-600">Загрузка…</div>}
         {error && <div className="text-red-600">{error}</div>}
         {!loading && !error && html && (
