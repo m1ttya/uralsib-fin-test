@@ -183,17 +183,36 @@ app.put('/api/admin/tests/meta', ensureAdmin, async (req, res) => {
 });
 
 // Public categories list for landing
-// Always return exactly three categories mapped from folders:
-// children -> school, adults -> adults, pensioners -> seniors
+// Scan top-level folders under tests and map to categories dynamically.
+// Special UI aliases:
+// - children -> school
+// - pensioners -> seniors
 app.get('/api/tests/categories', async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     const meta = await readTestsMeta();
-    const t = (meta as any)?.titles || {};
-    const items = [
-      { key: 'school', title: t.children || 'Школьники' },
-      { key: 'adults', title: t.adults || 'Взрослые' },
-      { key: 'seniors', title: t.pensioners || 'Пенсионеры' },
-    ];
+    const titles: Record<string, string> = (meta as any)?.titles || {};
+
+    const entries = await fs.readdir(TESTS_ROOT, { withFileTypes: true });
+    const folders = entries.filter(e => e.isDirectory()).map(e => e.name);
+
+    const toBase = (name: string) => {
+      if (name === 'children' || name.startsWith('children_')) return 'children';
+      if (name === 'adults' || name.startsWith('adults_')) return 'adults';
+      if (name === 'pensioners' || name.startsWith('pensioners_')) return 'pensioners';
+      return name;
+    };
+
+    const mapFolderToKey = (base: string) => base === 'children' ? 'school' : base === 'pensioners' ? 'seniors' : base;
+    const mapFolderToTitle = (base: string) => {
+      if (base === 'children') return titles.children || 'Школьники';
+      if (base === 'adults') return titles.adults || 'Взрослые';
+      if (base === 'pensioners') return titles.pensioners || 'Пенсионеры';
+      return titles[base] || base;
+    };
+
+    const bases = Array.from(new Set(folders.map(toBase)));
+    const items = bases.map((b) => ({ key: mapFolderToKey(b), title: mapFolderToTitle(b) }));
     res.json(items);
   } catch (e: any) {
     res.status(500).json({ error: 'Не удалось получить категории тестов', details: e?.message });

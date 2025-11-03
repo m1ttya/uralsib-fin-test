@@ -1,0 +1,16 @@
+{
+  "id": "Новый_тест",
+  "title": "Новый тест",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "как",
+      "options": [
+        "никак",
+        "вот так"
+      ],
+      "correctIndex": 0,
+      "correctExplanation": "ахАХАХХА"
+    }
+  ]
+}

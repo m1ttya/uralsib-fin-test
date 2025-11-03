@@ -69,8 +69,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-full relative">
-      {appState !== 'admin' && <BackgroundParallax />}
+    <div className="min-h-screen w-full relative" style={{ zIndex: 1 }}>
+      {appState !== 'admin' && (
+        <BackgroundParallax />
+      )}
       {renderCurrentState()}
       {appState !== 'admin' && (
         <LoginModal

@@ -16,8 +16,8 @@ type Question = {
 type TestData = {
   id: string;
   title: string;
-  category: 'adults' | 'children' | 'pensioners';
-  variant: string; // general | level_1 | level_2 | level_3 | age_5_10 | age_11_14 | age_15_18
+  category: string; // backend folder name (e.g., adults, children, pensioners, or custom)
+  variant: string; // file base name (e.g., general, level_1, ...)
   questions: Question[];
 };
 
@@ -58,26 +58,80 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
 }
 
 async function readTestById(testId: string): Promise<TestData> {
-  // map testId to file path
-  // examples: adults_general, adults_level_1, children_level_2
-  const [category, ...rest] = testId.split('_');
-  const variant = rest.join('_');
-  if (!category || !variant) throw new Error('Invalid testId');
+  // Resolve <category>_<variant> robustly:
+  // - Try all possible splits at underscores and pick the one where <category> is an existing folder
+  // - Support UI aliases (school -> children, seniors -> pensioners)
+  if (!testId.includes('_')) throw new Error('Invalid testId');
 
-  let relPath: string;
-  if (category === 'adults') {
-    relPath = variant === 'general' ? 'adults/general.json' : `adults/${variant}.json`;
-  } else if (category === 'pensioners') {
-    relPath = variant === 'general' ? 'pensioners/general.json' : `pensioners/${variant}.json`;
-  } else if (category === 'children') {
-    relPath = `children/${variant}.json`;
-  } else {
-    throw new Error('Unknown category');
+  const aliasToFolder: Record<string, string> = {
+    school: 'children',
+    seniors: 'pensioners',
+  };
+
+  const entries = await fs.readdir(dataRoot, { withFileTypes: true });
+  const folders = new Set(entries.filter(e => e.isDirectory()).map(e => e.name));
+
+  const underscoreIdxs: number[] = [];
+  for (let i = 0; i < testId.length; i++) if (testId[i] === '_') underscoreIdxs.push(i);
+
+  const tried: string[] = [];
+  for (const idx of underscoreIdxs) {
+    if (idx <= 0 || idx >= testId.length - 1) continue;
+    const rawCategory = testId.slice(0, idx);
+    const variant = testId.slice(idx + 1);
+    const folder = aliasToFolder[rawCategory] || rawCategory;
+
+    // Prefer only valid folders under dataRoot
+    if (!folders.has(folder)) continue;
+
+    const relPath = `${folder}/${variant}.json`;
+    const fullPath = path.join(dataRoot, relPath);
+    tried.push(relPath);
+    try {
+      const raw = await fs.readFile(fullPath, 'utf-8');
+      const data = JSON.parse(raw) as TestData;
+      const normalizedCategory = folder;
+      data.category = normalizedCategory;
+      data.variant = variant;
+      const normalizedId = `${normalizedCategory}_${variant}`;
+      (data as any).id = normalizedId;
+      if (!data.title || typeof data.title !== 'string') {
+        (data as any).title = normalizedId;
+      }
+      return data;
+    } catch {
+      // continue trying other splits
+    }
   }
 
-  const fullPath = path.join(dataRoot, relPath);
-  const raw = await fs.readFile(fullPath, 'utf-8');
-  return JSON.parse(raw) as TestData;
+  // As a last resort, try interpreting variant underscores as nested path segments
+  const firstIdx = testId.indexOf('_');
+  const rawCategory = testId.slice(0, firstIdx);
+  const variant = testId.slice(firstIdx + 1);
+  const folder = aliasToFolder[rawCategory] || rawCategory;
+
+  // Try both flat and nested variant paths
+  const candidateRelPaths = [
+    `${folder}/${variant}.json`,
+    `${folder}/${variant.replace(/_/g, '/')}.json`,
+  ];
+
+  for (const relPath of candidateRelPaths) {
+    tried.push(relPath);
+    try {
+      const raw = await fs.readFile(path.join(dataRoot, relPath), 'utf-8');
+      const data = JSON.parse(raw) as TestData;
+      data.category = folder;
+      data.variant = variant;
+      (data as any).id = `${folder}_${variant}`;
+      if (!data.title || typeof data.title !== 'string') {
+        (data as any).title = `${folder}_${variant}`;
+      }
+      return data;
+    } catch {}
+  }
+
+  throw new Error(`Unable to resolve testId '${testId}'. Tried: ${tried.join(', ')}`);
 }
 
 function sanitizeTestForClient(test: TestData, session: Session) {
@@ -93,29 +147,37 @@ function sanitizeTestForClient(test: TestData, session: Session) {
   return { id: test.id, title: test.title, category: test.category, variant: test.variant, questions };
 }
 
-testsRouter.get('/', async (req, res) => {
-  // Returns list of available tests (metadata only)
+testsRouter.get('/', async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  // Returns list of available tests (metadata only), discovered recursively
   try {
-    const categories = ['adults', 'pensioners', 'children'];
-    const variantsByCat: Record<string, string[]> = {
-      adults: ['general', 'level_1', 'level_2', 'level_3'],
-      pensioners: ['general', 'level_1', 'level_2', 'level_3'],
-      children: ['level_1', 'level_2', 'level_3']
-    };
     const list: Array<{ id: string; title: string; category: string; variant: string }> = [];
+    const skipped: Array<{ id: string; reason: string }> = [];
 
-    for (const cat of categories) {
-      for (const variant of variantsByCat[cat]) {
-        const id = `${cat}_${variant}`;
-        try {
-          const t = await readTestById(id);
-          list.push({ id: t.id, title: t.title, category: t.category, variant: t.variant });
-        } catch {
-          // skip missing files
+    async function walk(dir: string, rel: string[] = []) {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      for (const e of entries) {
+        if (e.isDirectory()) {
+          await walk(path.join(dir, e.name), [...rel, e.name]);
+        } else if (e.isFile() && /\.json$/i.test(e.name)) {
+          // rel[0] is category, rest form variant path + filename stem
+          if (rel.length === 0) continue; // skip files directly under dataRoot (shouldn't happen)
+          const category = rel[0];
+          const inner = [...rel.slice(1), e.name.replace(/\.json$/i, '')];
+          const variant = inner.length ? inner.join('_') : e.name.replace(/\.json$/i, '');
+          const id = `${category}_${variant}`;
+          try {
+            const t = await readTestById(id);
+            list.push({ id: t.id, title: t.title, category: t.category, variant: t.variant });
+          } catch (err: any) {
+            skipped.push({ id, reason: err?.message || 'parse/read error' });
+          }
         }
       }
     }
-    res.json({ tests: list });
+
+    await walk(dataRoot, []);
+    res.json({ tests: list, skipped });
   } catch (e) {
     res.status(500).json({ error: 'Failed to list tests' });
   }
@@ -162,8 +224,13 @@ testsRouter.post('/:testId/start', async (req, res) => {
 
     const clientTest = sanitizeTestForClient(test, session);
     res.json({ sessionId, test: clientTest });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to start test' });
+  } catch (e: any) {
+    const msg = e?.message || 'Failed to start test';
+    // Distinguish not found vs other
+    if (/Invalid testId|ENOENT|no such file or directory/i.test(msg)) {
+      return res.status(404).json({ error: `Тест не найден: ${msg}` });
+    }
+    res.status(500).json({ error: msg });
   }
 });
 

@@ -6,15 +6,30 @@
   <title>Тест по финансовой грамотности | Уралсиб</title>
   
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="icon" href="/favicon.ico">
   
   
-  <!-- Предзагрузка логотипов -->
+  <!-- Предзагрузка логотипов и критических ресурсов -->
   <link rel="preload" href="/uralsib_logo.svg" as="image" type="image/svg+xml">
   <link rel="preload" href="/uralsib_logo_square_white.svg" as="image" type="image/svg+xml">
-
-  <style></style>
+  <link rel="preload" href="/fonts/Uralsib/Uralsib-Regular.otf" as="font" type="font/otf" crossorigin>
+  
+  <!-- Критический CSS для быстрого рендеринга -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background-color: #f8fafc;
+    }
+    #root {
+      min-height: 100vh;
+    }
+    .loading-text {
+      color: #6b7280;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>

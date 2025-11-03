@@ -80,19 +80,6 @@ export default function ArticlesSection() {
                 <div className="font-bold text-secondary text-xl md:text-2xl leading-snug">{(a.title || '').replace(/^Imported:\s*/i, '').replace(/\.(pdf|docx)$/i, '').trim()}</div>
                 <div className="text-gray-600 text-sm mt-2">
                   Нажмите, чтобы открыть
-                  {a.tags && a.tags.length > 0 && (
-                    <div className="mt-1">
-                      {a.tags.slice(0, 3).map((tag, idx) => {
-                        const label = typeof tag === 'string' ? tag : (tag?.title || tag?.linkText || tag?.category || 'тег');
-                        const key = (typeof tag === 'string' ? tag : (tag?.linkUrl || tag?.title || tag?.category || idx));
-                        return (
-                          <span key={key} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">
-                            {label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               </motion.button>
             ))}
