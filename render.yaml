@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: uralsib-fin-test
+    env: docker
+    dockerfilePath: ./Dockerfile
+    buildCommand: npm ci
+    startCommand: npm run start
+    port: 3000
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        value: https://your-backend-url.com/api
+    regions:
+      - oregon # США (ближе к России)
+      # - frankfurt # Германия
+      # - singapore # Сингапур
+
+# База данных (опционально, когда добавишь backend)
+# databases:
+#   - name: uralsib-db
+#     databaseName: uralsib
+#     user: uralsib

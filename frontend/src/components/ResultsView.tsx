@@ -15,22 +15,6 @@ type Props = {
 };
 
 export default function ResultsView({ test, answers, correctByQ, onRestart, onToggleArticle }: Props) {
-  // Ensure modal container width is controlled when showing results
-  useEffect(() => {
-    // Try to find the nearest test modal container and adjust its width
-    const paper = document.querySelector('.results-modal-paper') as HTMLElement | null;
-    if (!paper) return;
-    const prevWidth = paper.style.width;
-    const prevMaxWidth = paper.style.maxWidth;
-    // Apply desired width for results view
-    paper.style.width = 'min(900px, 94vw)';
-    paper.style.maxWidth = 'none';
-    return () => {
-      // Restore on unmount
-      paper.style.width = prevWidth;
-      paper.style.maxWidth = prevMaxWidth;
-    };
-  }, []);
   // Считаем правильные ответы, сравнивая выбранный индекс (перетасованный)
   // с правильным индексом (перетасованный) из correctByQ
   const correctCount: number = answers.reduce((acc: number, ans: number | null, idx: number) => {
@@ -191,7 +175,10 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
   }
 
   const [articleContent, setArticleContent] = useState<{ id: string; title: string; html: string } | null>(null);
-  useEffect(() => { if (onToggleArticle) onToggleArticle(!!articleContent); }, [!!articleContent]);
+  useEffect(() => {
+    if (onToggleArticle) onToggleArticle(!!articleContent);
+    // Do not modify modal container overflow; manage scrolling inside the article view itself
+  }, [!!articleContent]);
 
   const openArticleSafely = async (id: string, title?: string) => {
     const base = import.meta.env.BASE_URL || '/';
@@ -296,23 +283,23 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.25 }}
-        className="relative flex flex-col h-full bg-white min-h-0"
+        className="relative flex flex-col bg-white rounded-2xl shadow-xl border border-gray-100"
       >
-        {/* Фиксированный заголовок: sticky, внутри прокручиваемого контейнера */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="sticky top-0 z-20 bg-white border-b">
-            <div className="flex items-center justify-between px-4 py-3">
-              <h1 className="text-lg font-semibold truncate mr-3">{articleContent.title}</h1>
-              <button
-                type="button"
-                onClick={() => setArticleContent(null)}
-                className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90"
-              >
-                Назад к рекомендациям
-              </button>
-            </div>
+        {/* Заголовок вне области скролла, всегда виден */}
+        <div className="bg-white border-b">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h1 className="text-lg font-bold truncate mr-3 text-secondary">{articleContent.title}</h1>
+            <button
+              type="button"
+              onClick={() => setArticleContent(null)}
+              className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90"
+            >
+              Назад к рекомендациям
+            </button>
           </div>
-          <div className="px-4 pb-4 pr-3">
+        </div>
+        <div className="max-h-[80vh] overflow-y-auto modal-scroll-area">
+          <div className="px-5 pb-5">
             <div
               className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: articleContent.html }}
@@ -337,20 +324,12 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
       </div>
 
       {/* Единая карточка результатов с рекомендациями */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-y-auto results-scroll pb-24">
         
         {/* Декоративные фоновые элементы */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-8 right-12 w-24 h-24 bg-white rounded-full blur-xl"></div>
-          <div className="absolute bottom-16 left-8 w-32 h-32 bg-white rounded-full blur-2xl"></div>
-          <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-white rounded-full blur-lg"></div>
-        </div>
+        {/* лаконичный фон без декоративных элементов */}
 
-        {/* 3D персонаж */}
-        <div className="absolute right-8 top-8 opacity-80">
-          <img src="/images/img/3_image10.png" alt="character" className="w-24 h-24 object-contain drop-shadow-lg" 
-               onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}}/>
-        </div>
+        {/* Убран персонаж для лаконичности */}
 
         {/* CSS декоративные элементы */}
         <div className="absolute left-8 bottom-8 opacity-30">
@@ -364,10 +343,10 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
         </div>
 
         {/* Горизонтальная компоновка - компактная */}
-        <div className="flex flex-col lg:flex-row gap-6 p-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 sm:gap-6 sm:p-6 h-full">
           
           {/* Левая колонка - результаты и кнопки */}
-          <div className="flex-1 flex flex-col justify-between py-4 relative z-10">
+          <div className="flex flex-col h-full min-h-0 py-4 pb-5 sm:pb-6 relative z-10">
             <div className="relative z-10">
               <div className="text-white/70 text-sm font-medium mb-2 uppercase tracking-wider">
                 Результат теста
@@ -385,46 +364,18 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
               </p>
 
               {/* Статистика */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 inline-block">
+              <div className="mx-auto w-fit bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center">
                 <div className="text-white/70 text-sm mb-1">Правильных ответов</div>
                 <div className="text-white text-xl font-bold">{correctCount} из {test.questions.length}</div>
               </div>
             </div>
 
             {/* Декоративные элементы и достижения */}
-            <div className="my-6">
-              {/* Стильные декоративные элементы */}
-              <div className="flex items-center justify-center mb-6">
-                <div className="flex items-center gap-6">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.8, rotate: -45 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.5, duration: 0.6 }}
-                    className="w-16 h-16 bg-gradient-to-br from-yellow-400/30 to-orange-500/30 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20"
-                  >
-                    <span className="text-3xl">💰</span>
-                  </motion.div>
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.8, rotate: 45 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.6, duration: 0.6 }}
-                    className="w-20 h-20 bg-gradient-to-br from-green-400/30 to-blue-500/30 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20"
-                  >
-                    <span className="text-4xl">📈</span>
-                  </motion.div>
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.8, rotate: -45 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.7, duration: 0.6 }}
-                    className="w-16 h-16 bg-gradient-to-br from-purple-400/30 to-pink-500/30 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20"
-                  >
-                    <span className="text-3xl">🎯</span>
-                  </motion.div>
-                </div>
-              </div>
+            <div className="my-6 flex-1 min-h-0">
+              {/* Убрали декоративные плитки */}
 
               {/* Стильные достижения */}
-              <div className="flex flex-col gap-3 max-w-md">
+              <div className="flex flex-col gap-3 w-full overflow-y-auto pr-1">
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -462,7 +413,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
             </div>
 
             {/* Кнопки действий в левой колонке */}
-            <div className="flex flex-col gap-3 max-w-sm relative z-50">
+            <div className="flex flex-col gap-3 w-full max-w-none relative z-50">
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -470,7 +421,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
                   console.log('Клик по кнопке банка');
                   handleGoToBank('https://uralsib.ru/');
                 }}
-                className="w-full bg-white text-primary rounded-xl py-3 px-6 font-semibold shadow-lg hover:shadow-xl hover:bg-white/90 transition-all duration-300 cursor-pointer relative z-50 pointer-events-auto"
+                className="w-full bg-white text-primary rounded-xl py-3 px-6 font-semibold shadow-md hover:shadow-lg hover:bg-white/95 transition-all duration-200 cursor-pointer relative z-50 pointer-events-auto"
                 type="button"
                 style={{ pointerEvents: 'auto' }}
               >
@@ -489,7 +440,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
                       console.error('onRestart не определен!');
                     }
                   }}
-                  className="w-full bg-white/20 text-white rounded-xl py-3 px-6 font-semibold hover:bg-white/30 transition-all duration-300 border border-white/30 cursor-pointer relative z-50 pointer-events-auto"
+                  className="w-full bg-white/20 text-white rounded-xl py-3 px-6 font-semibold hover:bg-white/25 transition-all duration-200 border border-white/30 cursor-pointer relative z-50 pointer-events-auto"
                   type="button"
                   style={{ pointerEvents: 'auto' }}
                 >
@@ -501,7 +452,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
 
           {/* Правая колонка - только рекомендации */}
           <motion.div 
-            className="flex-1 bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20"
+            className="flex flex-col bg-white/10 backdrop-blur-md rounded-3xl p-6 min-h-0"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -519,7 +470,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
             </div>
             
             {/* Сетка рекомендаций: 1 продукт (лучший тег) + 1 статья (худший тег) + персональные */}
-            <div className="space-y-4">
+            <div className="space-y-4 w-full min-h-0 overflow-y-auto pr-1">
               {/* Рекомендованный продукт по лучшему тегу */}
               {productRecommendation && (
                 <motion.div

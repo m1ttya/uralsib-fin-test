@@ -16,6 +16,9 @@ type Props = {
 };
 
 export default function TestFlow({ onRestart }: Props) {
+  const STORAGE_KEY = 'testFlowState_v1';
+  const restoredRef = (typeof window !== 'undefined') ? { current: false } as { current: boolean } : { current: false };
+
   const API_BASE = (import.meta as any).env?.VITE_API_URL || '';
   const [flowState, setFlowState] = useState<FlowState>('categories');
   const [selectedTest, setSelectedTest] = useState<BackendTest | null>(null);
@@ -30,6 +33,49 @@ export default function TestFlow({ onRestart }: Props) {
   const [progressPct, setProgressPct] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answerPending, setAnswerPending] = useState(false);
+
+  // Restore persisted state on mount
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (!data) return;
+      if (data.flowState) setFlowState(data.flowState as FlowState);
+      if (data.selectedTest) setSelectedTest(data.selectedTest as BackendTest);
+      if (Array.isArray(data.answers)) setAnswers(data.answers as (number|null)[]);
+      if (typeof data.currentQuestionIndex === 'number') setCurrentQuestionIndex(data.currentQuestionIndex);
+      if (typeof data.showFeedback === 'boolean') setShowFeedback(data.showFeedback);
+      if (typeof data.selectedOption === 'number' || data.selectedOption === null) setSelectedOption(data.selectedOption);
+      if (Array.isArray(data.availableTests)) setAvailableTests(data.availableTests);
+      if (typeof data.showAgeGroups === 'boolean') setShowAgeGroups(data.showAgeGroups);
+      if (typeof data.showTestSelection === 'boolean') setShowTestSelection(data.showTestSelection);
+      if (typeof data.progressPct === 'number') setProgressPct(data.progressPct);
+      if (typeof data.sessionId === 'string') setSessionId(data.sessionId);
+    } catch (e) { /* ignore */ }
+  }, []);
+
+  // Persist critical state whenever it changes
+  useEffect(() => {
+    try {
+      const payload = {
+        flowState,
+        selectedTest,
+        currentQuestionIndex,
+        answers,
+        showFeedback,
+        selectedOption,
+        showAgeGroups,
+        showTestSelection,
+        availableTests,
+        progressPct,
+        sessionId,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) { /* ignore */ }
+  }, [flowState, selectedTest, currentQuestionIndex, answers, showFeedback, selectedOption, showAgeGroups, showTestSelection, availableTests, progressPct, sessionId]);
 
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon?: string }>>([
     { id: 'school', name: 'Школьники', icon: '📚' },
@@ -222,6 +268,8 @@ export default function TestFlow({ onRestart }: Props) {
   };
 
   const handleRestartFlow = () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+
     setFlowState('categories');
     setSelectedTest(null);
     setCurrentQuestionIndex(0);
@@ -234,7 +282,7 @@ export default function TestFlow({ onRestart }: Props) {
   };
 
   const handleCloseClick = () => setShowExitConfirm(true);
-  const handleConfirmExit = () => { setShowExitConfirm(false); onRestart(); };
+  const handleConfirmExit = () => { setShowExitConfirm(false); try { localStorage.removeItem(STORAGE_KEY); } catch {} onRestart(); };
   const handleCancelExit = () => setShowExitConfirm(false);
 
  // Track if article ("Развитие") is opened inside results view
@@ -260,9 +308,9 @@ export default function TestFlow({ onRestart }: Props) {
         style={{ willChange: 'width, height', width: flowState === 'results' ? 'min(1200px, 98vw)' : 'min(960px, 94vw)' }}
         className={`${flowState === 'categories' ? 'category-modal-paper' : flowState === 'results' ? 'results-modal-paper' : 'test-modal-paper'} flex flex-col relative min-h-0 overflow-visible`}
       >
-        {(flowState === 'results' && !articleOpen) || flowState === 'test' ? (
+        {((flowState === 'results' && !articleOpen) || flowState === 'test' || flowState === 'categories') && (
           <CloseButton onClick={handleCloseClick} isWhite={flowState === 'results'} />
-        ) : null}
+        )}
 
         {/* Логотип */}
         {flowState !== 'results' && (

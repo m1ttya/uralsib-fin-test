@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Simple 2D vector helpers
-function dot(ax: number, ay: number, bx: number, by: number) { return ax * bx + ay * by; }
-
 function BackgroundParallax() {
   const MIN_SPEED = 0.35;  // ensure cards keep moving (slower)
   const MAX_SPEED = 1.1;   // cap speed lower
   const BASE_SIZE = 60;    // approximately equal size (width)
   const ASPECT = 0.66;     // card height ratio
-  const RADIUS = Math.max(BASE_SIZE, BASE_SIZE * ASPECT) * 0.45; // circle approx
+  const COLLISION_SCALE = 0.85; // reduce collision bounds slightly to match visual rounded corners
 
   const [cards, setCards] = useState<Array<{
     id: number;
@@ -16,30 +13,47 @@ function BackgroundParallax() {
     y: number;
     vx: number;
     vy: number;
-    size: number;        // width
-    height: number;      // height
-    radius: number;      // collision circle
+    size: number;
+    height: number;
+    radius: number;
     opacity: number;
     rotation: number;
     rotationSpeed: number;
-    depth: number;       // for parallax strength
+    depth: number;
+    image: string;       // PNG image path
+    pop?: number;        // 0..1 popping progress
+    popping?: boolean;   // is popping animation active
+    spawn?: boolean;     // is spawn animation active
+    spawnP?: number;     // 0..1 spawn progress
   }>>([]);
 
   const mouseTarget = useRef({ x: 0, y: 0 });
   const mouseCurrent = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number>();
+  // click coordination via refs so we can react inside RAF loop even with z-index -1
+  const clickRef = useRef<{ x: number; y: number; pending: boolean }>({ x: 0, y: 0, pending: false });
+  // subtle ripple waves on background click
+  const wavesRef = useRef<Array<{ id: number; x: number; y: number; p: number }>>([]);
+  const waveIdRef = useRef(0);
+  // target count for respawn
+  const targetCountRef = useRef(0);
+  const isCardPressedRef = useRef(false);
 
   useEffect(() => {
     const W = window.innerWidth;
     const H = window.innerHeight;
 
-    // Initialize cards (count scales with screen area)
-    const count = Math.min(16, Math.max(10, Math.floor((W * H) / 70000)));
+    // Initialize cards (count scales with screen area). Fewer on small screens.
+    const isSmall = Math.min(W, H) < 640;
+    const count = isSmall
+      ? Math.min(10, Math.max(5, Math.floor((W * H) / 130000)))
+      : Math.min(16, Math.max(10, Math.floor((W * H) / 70000)));
     const newCards = Array.from({ length: count }, (_, i) => {
       // Equal size with very slight variation to avoid perfect symmetry
       const size = BASE_SIZE * (0.96 + Math.random() * 0.08); // ~ +/-4%
       const height = size * ASPECT;
-      const radius = Math.max(size, height) * 0.45;
+      const halfW = size * 0.5 * COLLISION_SCALE;
+      const halfH = height * 0.5 * COLLISION_SCALE;
 
       // Initial velocity with randomized direction, clamped to desired range
       let angle = Math.random() * Math.PI * 2;
@@ -47,20 +61,27 @@ function BackgroundParallax() {
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
 
+      // Randomly assign one of the three PNG images
+      const images = ['2_image11.png', '2_image13.png', '2_image14.png'];
+      const image = images[Math.floor(Math.random() * images.length)];
+
       return {
         id: i,
-        x: Math.random() * (W - 2 * radius) + radius,
-        y: Math.random() * (H - 2 * radius) + radius,
+        x: Math.random() * (W - 2 * halfW) + halfW,
+        y: Math.random() * (H - 2 * halfH) + halfH,
         vx, vy,
-        size, height, radius,
-        opacity: 0.12 + Math.random() * 0.06, // more transparent (0.12..0.18)
+        size, height,
+        radius: Math.max(halfW, halfH), // radius used for some calculations
+        opacity: 0.08 + Math.random() * 0.05, // more transparent (0.08..0.13)
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 1.0,
         depth: 0.8 + Math.random() * 0.6, // 0.8..1.4
+        image,
       };
     });
 
-    setCards(newCards);
+    setCards(newCards.map(c => ({ ...c, pop: 0, popping: false, spawn: true, spawnP: 0 })) as any);
+    targetCountRef.current = newCards.length;
 
     const handleMouseMove = (e: MouseEvent) => {
       mouseTarget.current = {
@@ -69,6 +90,42 @@ function BackgroundParallax() {
       };
     };
 
+    const clickImpulse = { x: 0, y: 0, active: false } as { x:number;y:number;active:boolean };
+    const onDocClick = (e: MouseEvent) => {
+      const cx = e.clientX, cy = e.clientY;
+      // detect click on a card (point in rotated rect)
+      let popped = false;
+      setCards(prev => {
+        let changed = false;
+        const next = prev.map(c => {
+          if (popped) return c;
+          const hw = c.size * 0.5 * COLLISION_SCALE, hh = c.height * 0.5 * COLLISION_SCALE;
+          const rad = (c.rotation * Math.PI) / 180;
+          const cos = Math.cos(rad), sin = Math.sin(rad);
+          // compensate visual parallax to hit-test in card's world space
+          const tx = mouseCurrent.current.x * (0.6 + c.depth * 1.2);
+          const ty = mouseCurrent.current.y * (0.6 + c.depth * 1.2);
+          const px = cx - tx;
+          const py = cy - ty;
+          // world->local
+          const lx =  cos * (px - c.x) + sin * (py - c.y);
+          const ly = -sin * (px - c.x) + cos * (py - c.y);
+          if (Math.abs(lx) <= hw && Math.abs(ly) <= hh) {
+            popped = true; changed = true;
+            return { ...c, popping: true, pop: 0 } as any;
+          }
+          return c;
+        });
+        return changed ? next : prev;
+      });
+      // spawn a subtle wave
+      const id = waveIdRef.current++;
+      // waves visual removed
+      // background blast only if not popped a card and not from card press
+      if (!popped && !isCardPressedRef.current) {
+        clickRef.current = { x: cx, y: cy, pending: true };
+      }
+    };
     const animate = () => {
       // Smooth mouse parallax
       mouseCurrent.current.x += (mouseTarget.current.x - mouseCurrent.current.x) * 0.08;
@@ -80,17 +137,54 @@ function BackgroundParallax() {
         const H = window.innerHeight;
         const next = prev.map(c => ({ ...c }));
 
+        // Handle queued background click -> radial impulse
+        // progress waves
+        for (let i = wavesRef.current.length - 1; i >= 0; i--) {
+          const w = wavesRef.current[i];
+          w.p += 0.06; // progress faster for visibility
+          if (w.p >= 1) wavesRef.current.splice(i, 1);
+        }
+        if (clickRef.current.pending) {
+          clickImpulse.x = clickRef.current.x;
+          clickImpulse.y = clickRef.current.y;
+          clickImpulse.active = true;
+          clickRef.current.pending = false;
+        } else if (clickImpulse.active) {
+          // one-shot activate then decay next frame
+          clickImpulse.active = false;
+        }
+
+
         // Integrate motion and bounce off edges
         for (let i = 0; i < next.length; i++) {
           const c = next[i];
+          if (clickImpulse.active) {
+            const dx = c.x - clickImpulse.x;
+            const dy = c.y - clickImpulse.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const nx = dx / dist, ny = dy / dist;
+            // limit blast radius so only nearby cards move
+            const radius = 220; // px
+            if (dist < radius) {
+              const falloff = 1 - dist / radius; // 1..0
+              const force = 2.0 * falloff; // gentle
+              c.vx += nx * force;
+              c.vy += ny * force;
+            }
+          }
+          // ease-in spawn slight scale/opacity on appearance
+          if ((c as any).spawn) {
+            (c as any).spawnP = Math.min(1, ((c as any).spawnP || 0) + 0.08);
+            if ((c as any).spawnP >= 1) (c as any).spawn = false;
+          }
           c.x += c.vx;
           c.y += c.vy;
 
           // Edge bounce using rotated rectangle corners for better accuracy and spin leverage
-          const halfW = c.size * 0.5;
-          const halfH = c.height * 0.5;
+          const halfW = c.size * 0.5 * COLLISION_SCALE;
+          const halfH = c.height * 0.5 * COLLISION_SCALE;
           const eWall = 0.95; // restitution
-          const wallTorqueK = 0.16; // stronger spin from glancing wall hits
+          const wallTorqueK = 0.24; // stronger spin from glancing wall hits (boosted)
 
           const rad = (c.rotation * Math.PI) / 180;
           const cos = Math.cos(rad);
@@ -101,12 +195,17 @@ function BackgroundParallax() {
             { x:  halfW, y: -halfH },
             { x:  halfW, y:  halfH },
             { x: -halfW, y:  halfH },
-          ].map(p => ({
-            x: c.x + p.x * cos - p.y * sin,
-            y: c.y + p.x * sin + p.y * cos,
-            localX: p.x,
-            localY: p.y,
-          }));
+          ].map(p => {
+            // Apply parallax offset to collision detection
+            const parallaxX = mouseCurrent.current.x * (0.6 + c.depth * 1.2);
+            const parallaxY = mouseCurrent.current.y * (0.6 + c.depth * 1.2);
+            return {
+              x: c.x + p.x * cos - p.y * sin + parallaxX,
+              y: c.y + p.x * sin + p.y * cos + parallaxY,
+              localX: p.x,
+              localY: p.y,
+            };
+          });
 
           // Helper to apply wall response
           const applyWallHit = (wall: 'left'|'right'|'top'|'bottom', corner: {x:number,y:number,localX:number,localY:number}, penetration: number) => {
@@ -153,6 +252,7 @@ function BackgroundParallax() {
           let minBottom = { pen: 0, corner: null as any };
 
           for (const corner of corners) {
+            // More explicit calculation to avoid floating-point precision issues
             const penLeft = Math.max(0, -corner.x);
             const penTop = Math.max(0, -corner.y);
             const penRight = Math.max(0, corner.x - W);
@@ -170,7 +270,7 @@ function BackgroundParallax() {
 
           c.rotation += c.rotationSpeed;
           // slight rotational damping (keep spin noticeable longer)
-          c.rotationSpeed *= 0.9997;
+          c.rotationSpeed *= 0.99985; // reduce damping so spin persists longer
           // clamp rotation speed to avoid extremes
           if (c.rotationSpeed > 7) c.rotationSpeed = 7;
           if (c.rotationSpeed < -7) c.rotationSpeed = -7;
@@ -178,10 +278,10 @@ function BackgroundParallax() {
 
         // Resolve pairwise collisions using OBB SAT (rotated rectangles)
         const e = 0.95; // restitution for card-card
-        const torqueK = 0.24;
+        const torqueK = 0.34; // boost spin from collisions
         const getCorners = (c: any) => {
-          const hw = c.size * 0.5;
-          const hh = c.height * 0.5;
+          const hw = c.size * 0.5 * COLLISION_SCALE;
+          const hh = c.height * 0.5 * COLLISION_SCALE;
           const rad = (c.rotation * Math.PI) / 180;
           const cos = Math.cos(rad), sin = Math.sin(rad);
           const pts = [
@@ -196,8 +296,8 @@ function BackgroundParallax() {
           }));
         };
         const getAxes = (c: any) => {
-          const hw = c.size * 0.5;
-          const hh = c.height * 0.5;
+          const hw = c.size * 0.5 * COLLISION_SCALE;
+          const hh = c.height * 0.5 * COLLISION_SCALE;
           const rad = (c.rotation * Math.PI) / 180;
           const cos = Math.cos(rad), sin = Math.sin(rad);
           // Local axes transformed
@@ -279,7 +379,7 @@ function BackgroundParallax() {
 
             // Helper: compute closest point on OBB of c to point p (world coords)
             const closestOnOBB = (c:any, px:number, py:number) => {
-              const hw = c.size * 0.5, hh = c.height * 0.5;
+              const hw = c.size * 0.5 * COLLISION_SCALE, hh = c.height * 0.5 * COLLISION_SCALE;
               const rad = (c.rotation * Math.PI) / 180;
               const cos = Math.cos(rad), sin = Math.sin(rad);
               // world to local
@@ -313,6 +413,54 @@ function BackgroundParallax() {
         }
 
         // Ensure continuous motion: clamp speeds and add tiny perturbation if too low
+        // Also progress pop animations and remove popped cards
+        for (let i = next.length - 1; i >= 0; i--) {
+          const c = next[i] as any;
+          if (c.popping) {
+            c.pop = Math.min(1, (c.pop || 0) + 0.1);
+            if (c.pop >= 1) {
+              next.splice(i, 1);
+              // schedule respawn near screen center with small random offset
+              const W2 = window.innerWidth, H2 = window.innerHeight;
+              const size = BASE_SIZE * (0.96 + Math.random() * 0.08);
+              const height = size * ASPECT;
+              const halfW = size * 0.5 * COLLISION_SCALE;
+              const halfH = height * 0.5 * COLLISION_SCALE;
+              const angle = Math.random() * Math.PI * 2;
+              const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+              const vx = Math.cos(angle) * speed;
+              const vy = Math.sin(angle) * speed;
+              setTimeout(() => {
+                setCards(prevSpawn => {
+                  if (prevSpawn.length >= targetCountRef.current) return prevSpawn;
+                  const id = Math.max(0, ...prevSpawn.map(cc => cc.id)) + 1;
+                  const cx = W2 * 0.5 + (Math.random() - 0.5) * 40;
+                  const cy = H2 * 0.5 + (Math.random() - 0.5) * 40;
+                  const images = ['2_image11.png', '2_image13.png', '2_image14.png'];
+                  const image = images[Math.floor(Math.random() * images.length)];
+                  return [...prevSpawn, {
+                    id,
+                    x: cx,
+                    y: cy,
+                    vx, vy,
+                    size, height,
+                    radius: Math.max(halfW, halfH),
+                    opacity: 0.12 + Math.random() * 0.06,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 1.0,
+                    depth: 0.8 + Math.random() * 0.6,
+                    image,
+                    pop: 0,
+                    popping: false,
+                    spawn: true,
+                    spawnP: 0,
+                  }];
+                });
+              }, 700 + Math.random() * 800);
+              continue;
+            }
+          }
+        }
         for (let i = 0; i < next.length; i++) {
           const c = next[i];
           const speed = Math.hypot(c.vx, c.vy);
@@ -336,14 +484,17 @@ function BackgroundParallax() {
     };
 
     document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('click', onDocClick, { passive: true });
     animationRef.current = requestAnimationFrame(animate);
 
     const onResize = () => {
       setCards(prev => prev.map(c => {
         const W = window.innerWidth;
         const H = window.innerHeight;
-        const x = Math.min(Math.max(c.radius, c.x), W - c.radius);
-        const y = Math.min(Math.max(c.radius, c.y), H - c.radius);
+        const halfW = c.size * 0.5 * COLLISION_SCALE;
+        const halfH = c.height * 0.5 * COLLISION_SCALE;
+        const x = Math.min(Math.max(halfW, c.x), W - halfW);
+        const y = Math.min(Math.max(halfH, c.y), H - halfH);
         return { ...c, x, y };
       }));
     };
@@ -351,6 +502,7 @@ function BackgroundParallax() {
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('click', onDocClick as any);
       window.removeEventListener('resize', onResize);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
@@ -364,22 +516,67 @@ function BackgroundParallax() {
         left: 0,
         width: '100%',
         height: '100%',
-        // Keep background beneath all content
         zIndex: -1,
-        pointerEvents: 'none',
-        // Subtle brand gradient using Uralsib colors
+        // allow clicks to propagate for explosions
+        pointerEvents: 'auto',
         background: 'radial-gradient(1200px 800px at 70% -10%, rgba(59,23,92,0.10), rgba(106,46,143,0.00))',
       }}
+      onClick={(e) => {
+        // background click handled via document listener too; stop here to prevent selecting text
+        e.preventDefault();
+      }}
     >
+      {/* ripple waves */}
+      {wavesRef.current.map(w => (
+        <div key={w.id} style={{
+          position: 'absolute',
+          left: w.x - 260,
+          top: w.y - 260,
+          width: 520,
+          height: 520,
+          pointerEvents: 'none',
+          borderRadius: '50%',
+          border: '3px solid rgba(255,255,255,' + (0.55 * (1 - w.p)).toFixed(3) + ')',
+          transform: 'scale(' + (0.7 + w.p * 2.2).toFixed(3) + ')',
+          opacity: 0.9 * (1 - w.p),
+          transition: 'transform 60ms linear, opacity 60ms linear'
+        }}/>
+      ))}
+
       {cards.map((card) => {
         const tx = mouseCurrent.current.x * (0.6 + card.depth * 1.2); // depth-parallax
         const ty = mouseCurrent.current.y * (0.6 + card.depth * 1.2);
-        const shades = ['#2F124A', '#3B175C', '#49206F', '#56297D', '#63328A', '#6A2E8F', '#744198'];
-        const color = shades[card.id % shades.length];
         return (
           <div
-            key={card.id}
-            style={{
+           key={card.id}
+           onMouseDown={(e) => {
+             // prevent default and bubbling to stop background impulse
+             e.preventDefault();
+             e.stopPropagation();
+             isCardPressedRef.current = true;
+             setCards(prev => prev.map(c => c.id === card.id ? { ...c, popping: true, pop: 0 } : c));
+             // Reset the flag after a short delay
+             setTimeout(() => { isCardPressedRef.current = false; }, 50);
+           }}
+           onTouchStart={(e) => {
+             // prevent default and bubbling to stop background impulse
+             e.preventDefault();
+             e.stopPropagation();
+             isCardPressedRef.current = true;
+             setCards(prev => prev.map(c => c.id === card.id ? { ...c, popping: true, pop: 0 } : c));
+             // Reset the flag after a short delay
+             setTimeout(() => { isCardPressedRef.current = false; }, 50);
+           }}
+           onPointerDown={(e) => {
+             // modern unified pointer event handler
+             e.preventDefault();
+             e.stopPropagation();
+             isCardPressedRef.current = true;
+             setCards(prev => prev.map(c => c.id === card.id ? { ...c, popping: true, pop: 0 } : c));
+             // Reset the flag after a short delay
+             setTimeout(() => { isCardPressedRef.current = false; }, 50);
+           }}
+           style={{
               position: 'absolute',
               left: card.x - card.size * 0.5,
               top: card.y - card.height * 0.5,
@@ -388,18 +585,42 @@ function BackgroundParallax() {
               transform: `translate3d(${tx}px, ${ty}px, 0) rotate(${card.rotation}deg)`,
               opacity: card.opacity,
               willChange: 'transform',
+              // Completely disable all delays and default behaviors
+              touchAction: 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitTapHighlightColor: 'transparent',
+              // Ensure no hover effects that might delay
+              cursor: 'default',
             }}
           >
             <div
-              style={{
-                width: '100%',
-                height: '100%',
-                // Uralsib brand palette shades close to brand
-                backgroundColor: color,
-                borderRadius: '10px',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
-              }}
-            />
+             style={{
+               width: '100%',
+               height: '100%',
+               borderRadius: '10px',
+               boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
+               transform: card.popping ? `scale(${1 + (card.pop || 0) * 0.35})` : `scale(${card.spawn ? (0.85 + (card.spawnP || 0) * 0.15) : 1})`,
+               opacity: card.popping ? (1 - (card.pop || 0)) : (card.spawn ? (0.6 + (card.spawnP || 0) * 0.4) : 1),
+               transition: 'transform 90ms ease-out, opacity 150ms ease-out',
+               overflow: 'hidden',
+             }}
+            >
+              <img
+                src={`/assets/img/${card.image}`}
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '10px',
+                  display: 'block',
+                }}
+              />
+            </div>
           </div>
         );
       })}

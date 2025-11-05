@@ -3,8 +3,10 @@ type Props = { onStartTest: () => void };
 import NavBar from './NavBar';
 import HeroSection from './sections/HeroSection';
 import PersonasSection from './sections/PersonasSection';
-import ArticlesSection from './sections/ArticlesSection';
+import TrainingSection from './sections/TrainingSection';
 import AboutSection from './sections/AboutSection';
+import GameSection from './sections/GameSection';
+import { ENABLE_GAME } from '../config';
 import Footer from './sections/Footer';
 
 export default function LandingPage({ onStartTest }: Props) {
@@ -13,8 +15,9 @@ export default function LandingPage({ onStartTest }: Props) {
       <NavBar onStart={onStartTest} />
       <HeroSection onStart={onStartTest} />
       <PersonasSection />
-      <ArticlesSection />
+      <TrainingSection />
       <AboutSection />
+      {ENABLE_GAME && <GameSection />}
       <Footer />
     </div>
   );

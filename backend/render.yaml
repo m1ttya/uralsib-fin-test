@@ -1,14 +1,15 @@
 services:
   - type: web
     name: uralsib-fin-test
-    env: node
-    rootDir: .
-    plan: free
+    runtime: node
     buildCommand: |
+      cd backend
       npm ci
       npm run build
-    startCommand: npm start
-    autoDeploy: true
+      npm run build:frontend
+    startCommand: |
+      cd backend
+      npm start
     envVars:
       - key: NODE_ENV
         value: production

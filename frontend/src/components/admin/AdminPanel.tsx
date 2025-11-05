@@ -1151,14 +1151,125 @@ function StatCard({ title, value, hint, spark }: { title: string; value: string;
   );
 }
 
+function CoursesManager() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setError(null);
+        setLoading(true);
+        const res = await fetch('/api/admin/courses', { credentials: 'include' });
+        if (!res.ok) throw new Error('Не удалось загрузить курсы');
+        const data = await res.json();
+        setCourses(Array.isArray(data) ? data : []);
+      } catch (e: any) {
+        setError(e?.message || 'Ошибка загрузки курсов');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-1 border-r p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-lg font-semibold text-primary">Курсы</div>
+        </div>
+        <div className="space-y-2">
+          {loading ? (
+            <div className="text-gray-500">Загрузка…</div>
+          ) : error ? (
+            <div className="text-red-600 text-sm">{error}</div>
+          ) : courses.length === 0 ? (
+            <div className="text-gray-500">Курсов пока нет</div>
+          ) : (
+            courses.map((course) => (
+              <button
+                key={course.id}
+                className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+              >
+                <div className="font-medium text-gray-900">{course.title}</div>
+                {course.description && (
+                  <div className="text-sm text-gray-500 mt-1">{course.description}</div>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+      <div className="lg:col-span-2 p-4">
+        <div className="text-center py-12">
+          <div className="text-gray-500 mb-2">Управление курсами</div>
+          <div className="text-sm text-gray-400">Здесь будет интерфейс для создания и редактирования курсов</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Overview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tests, setTests] = useState<{ totalFiles: number; byFolder: Record<string, number> }>({ totalFiles: 0, byFolder: {} });
   const [articles, setArticles] = useState<{ groups: number; docx: number; html: number; missingHtml: number }>({ groups: 0, docx: 0, html: 0, missingHtml: 0 });
   const [products, setProducts] = useState<{ categories: number; totalItems: number }>({ categories: 0, totalItems: 0 });
-  // Основная статистика (заглушка до подключения аналитики)
-  const activity = { totalRuns: 0, uniqueUsers: 0, avgScore: '-' as string | number };
+
+  // Аналитика по тестам (все по нулям до подключения аналитики)
+  const testAnalytics = {
+    totalCompletions: 0,
+    completionRate: 0,
+    avgTime: '0:00',
+    avgScore: 0
+  };
+
+  // Конверсия в регистрацию
+  const conversion = {
+    registeredAfterTests: 0,
+    totalConversions: 0,
+    timeToConvert: '-'
+  };
+
+  // География
+  const geography = {
+    cities: 0,
+    topCity: '-',
+    regionsDistribution: '-'
+  };
+
+  // Результаты тестов
+  const testResults = {
+    popularAnswers: 0,
+    difficultQuestions: 0,
+    distributionSpread: '-'
+  };
+
+  // Рекомендации и продукты
+  const recommendations = {
+    articlesOpened: 0,
+    coursesStarted: 0,
+    timeOnTraining: '0:00',
+    productTransitions: 0
+  };
+
+  // Временные метрики
+  const timeMetrics = {
+    peakHours: '-',
+    avgSession: '0:00',
+    weeklyGrowth: '0%'
+  };
+
+  // Продуктовая аналитика
+  const productAnalytics = {
+    creditApplications: 0,
+    depositApplications: 0,
+    cardApplications: 0,
+    leadQuality: '-'
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -1182,23 +1293,18 @@ function Overview() {
           walk(tree);
           setTests({ totalFiles: total, byFolder });
         }
-        // articles
-        const aRes = await fetch('/api/admin/articles', { credentials: 'include' });
+        // articles - используем meta endpoint для получения данных о статьях
+        const aRes = await fetch('/api/admin/articles/meta', { credentials: 'include' });
         if (aRes.ok) {
-          const list = await aRes.json();
-          const map = new Map<string, { hasDocx: boolean; hasHtml: boolean }>();
-          list.forEach((f: any) => {
-            const m = String(f.name).match(/^(.*?)(\.(docx|html?|pdf))$/i);
-            const base = m ? m[1].trim() : String(f.name).trim();
-            const ext = (m ? m[3] : '').toLowerCase();
-            const cur = map.get(base) || { hasDocx: false, hasHtml: false };
-            if (ext === 'docx') cur.hasDocx = true;
-            if (ext === 'html' || ext === 'htm') cur.hasHtml = true;
-            map.set(base, cur);
-          });
+          const meta = await aRes.json();
+          // meta - это массив статей с информацией о docx и html
           let docx = 0, html = 0, missingHtml = 0;
-          map.forEach(v => { if (v.hasDocx) docx++; if (v.hasHtml) html++; if (v.hasDocx && !v.hasHtml) missingHtml++; });
-          setArticles({ groups: map.size, docx, html, missingHtml });
+          meta.forEach((article: any) => {
+            if (article.hasDocx) docx++;
+            if (article.hasHtml) html++;
+            if (article.hasDocx && !article.hasHtml) missingHtml++;
+          });
+          setArticles({ groups: meta.length, docx, html, missingHtml });
         }
         // products
         const pRes = await fetch('/api/admin/products_by_topic', { credentials: 'include' });
@@ -1217,36 +1323,141 @@ function Overview() {
     fetchAll();
   }, []);
 
+  const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
+    <div className="border-b border-gray-200 pb-2 mb-4">
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <div className="text-xs text-gray-500 mt-0.5">{subtitle}</div>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h2 className="text-xl font-semibold text-primary mb-1">Обзор</h2>
-        <div className="text-gray-600 text-sm">Сводка по контенту проекта. Метрики реальных пользователей появятся после подключения аналитики.</div>
+        <div className="text-gray-600 text-sm">Подробная аналитика и статистика по проекту</div>
       </div>
 
       {error && <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg">{error}</div>}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <StatCard title="Прохождений тестов" value={String(activity.totalRuns)} hint="Всего за период (будет)" spark={[0.1,0.2,0.15,0.25,0.22,0.3]} />
-        <StatCard title="Уникальные пользователи" value={String(activity.uniqueUsers)} hint="По cookie/ip (будет)" spark={[0.2,0.18,0.22,0.27,0.26,0.32]} />
-        <StatCard title="Средний результат" value={String(activity.avgScore)} hint="В процентах (будет)" spark={[0.6,0.62,0.61,0.59,0.63,0.64]} />
+      {/* Аналитика по тестам */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="📊 Аналитика по тестам"
+          subtitle="Статистика прохождения и результатов тестирования"
+        />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard title="Всего прохождений" value={String(testAnalytics.totalCompletions)} hint="За последний месяц" />
+          <StatCard title="Конверсия завершения" value={`${testAnalytics.completionRate}%`} hint="Доля завершивших" />
+          <StatCard title="Среднее время" value={testAnalytics.avgTime} hint="На прохождение" />
+          <StatCard title="Средний балл" value={`${testAnalytics.avgScore}%`} hint="Результат тестов" />
+        </div>
+        <div className="mt-4 text-sm text-gray-600">
+          📝 Детальная статистика по каждому тесту будет доступна после подключения аналитики
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-3">
-        <StatCard title="Файлы тестов" value={loading ? '…' : String(tests.totalFiles)} hint={Object.entries(tests.byFolder).map(([k,v])=>`${k}: ${v}`).join(', ') || undefined} />
-        <StatCard title="Категории продуктов" value={loading ? '…' : String(products.categories)} hint={`Всего карточек: ${products.totalItems}`} />
-        <StatCard title="Статьи" value={loading ? '…' : String(articles.groups)} hint={`DOCX: ${articles.docx}, HTML: ${articles.html}${articles.missingHtml?`, без HTML: ${articles.missingHtml}`:''}`} />
+      {/* Конверсия в регистрацию */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="🎯 Конверсия в регистрацию"
+          subtitle="Переходы от тестов к регистрации в банке"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard title="Зарегистрировались" value={String(conversion.registeredAfterTests)} hint="После прохождения тестов" />
+          <StatCard title="Общая конверсия" value={`${conversion.totalConversions}%`} hint="Из всех прошедших" />
+          <StatCard title="Время до регистрации" value={conversion.timeToConvert} hint="Средний срок" />
+        </div>
+      </div>
+
+      {/* География и устройства */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="🌍 География и устройства"
+          subtitle="Распределение пользователей по регионам и устройствам"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard title="Городов охвачено" value={String(geography.cities)} hint="По всей России" />
+          <StatCard title="Лидер по регионам" value={geography.topCity} hint="Максимальная активность" />
+          <StatCard title="Топ регионы" value={geography.regionsDistribution} hint="СПб, Екб, Казань" />
+        </div>
+      </div>
+
+      {/* Результаты и сложность тестов */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="📈 Результаты тестов"
+          subtitle="Анализ ответов, сложности и распределения результатов"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard title="Популярные ответы" value={`${testResults.popularAnswers}%`} hint="Чаще всего выбираемые" />
+          <StatCard title="Сложные вопросы" value={String(testResults.difficultQuestions)} hint="С наибольшими ошибками" />
+          <StatCard title="Распределение результатов" value={testResults.distributionSpread} hint="Качество разброса баллов" />
+        </div>
+      </div>
+
+      {/* Рекомендации и обучение */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="📚 Рекомендации и обучение"
+          subtitle="Эффективность контента и время на обучение"
+        />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard title="Статьи открыты" value={String(recommendations.articlesOpened)} hint="После тестов" />
+          <StatCard title="Курсы начаты" value={String(recommendations.coursesStarted)} hint="Заинтересовались" />
+          <StatCard title="Время на обучение" value={recommendations.timeOnTraining} hint="Среднее время в секции" />
+          <StatCard title="Переходы к продуктам" value={String(recommendations.productTransitions)} hint="Интерес к банковским продуктам" />
+        </div>
+      </div>
+
+      {/* Временные метрики */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="⏰ Временные метрики"
+          subtitle="Сезонность, активность по часам и поведение пользователей"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard title="Пик активности" value={timeMetrics.peakHours} hint="Наибольшая посещаемость" />
+          <StatCard title="Средняя сессия" value={timeMetrics.avgSession} hint="Время на сайте" />
+          <StatCard title="Рост за неделю" value={timeMetrics.weeklyGrowth} hint="Увеличение трафика" />
+        </div>
+      </div>
+
+      {/* Продуктовая аналитика */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="💳 Продуктовая аналитика"
+          subtitle="Переходы к банковским продуктам и качество лидов"
+        />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard title="Заявки на кредит" value={String(productAnalytics.creditApplications)} hint="Прямые заявки" />
+          <StatCard title="Заявки на депозит" value={String(productAnalytics.depositApplications)} hint="Потенциальные вкладчики" />
+          <StatCard title="Заявки на карту" value={String(productAnalytics.cardApplications)} hint="Наибольший интерес" />
+          <StatCard title="Качество лидов" value={productAnalytics.leadQuality} hint="Конверсия в клиентов" />
+        </div>
+      </div>
+
+      {/* Контент проекта */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <SectionHeader
+          title="📦 Контент проекта"
+          subtitle="Статистика по тестам, статьям и продуктам"
+        />
+        <div className="grid md:grid-cols-3 gap-4">
+          <StatCard title="Файлы тестов" value={loading ? '…' : String(tests.totalFiles)} hint={Object.entries(tests.byFolder).map(([k,v])=>`${k}: ${v}`).join(', ') || undefined} />
+          <StatCard title="Категории продуктов" value={loading ? '…' : String(products.categories)} hint={`Всего карточек: ${products.totalItems}`} />
+          <StatCard title="Статьи" value={loading ? '…' : String(articles.groups)} hint={`DOCX: ${articles.docx}, HTML: ${articles.html}${articles.missingHtml?`, без HTML: ${articles.missingHtml}`:''}`} />
+        </div>
       </div>
 
       <div className="text-xs text-gray-500">
-        Планы: сбор событий (start/finish, ответы), хранение результатов и графики, фильтры по периодам, экспорт CSV.
+        💡 Для активации аналитики требуется подключение системы сбора событий и интеграция с CRM банка. Контент проекта отображается в реальном времени.
       </div>
     </div>
   );
 }
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState<'overview' | 'tests' | 'products' | 'articles'>('overview');
+  const [tab, setTab] = useState<'overview' | 'tests' | 'products' | 'articles' | 'courses'>('overview');
 
   useEffect(() => {
     // Ensure we are on the admin hash
@@ -1288,6 +1499,7 @@ export default function AdminPanel() {
           <TabButton active={tab === 'tests'} onClick={() => setTab('tests')}>Тесты</TabButton>
           <TabButton active={tab === 'products'} onClick={() => setTab('products')}>Продукты</TabButton>
           <TabButton active={tab === 'articles'} onClick={() => setTab('articles')}>Статьи</TabButton>
+          <TabButton active={tab === 'courses'} onClick={() => setTab('courses')}>Курсы</TabButton>
         </div>
 
         {tab === 'overview' && (
@@ -1311,6 +1523,12 @@ export default function AdminPanel() {
         {tab === 'articles' && (
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-0 overflow-hidden">
             <ArticlesManager />
+          </section>
+        )}
+
+        {tab === 'courses' && (
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-0 overflow-hidden">
+            <CoursesManager />
           </section>
         )}
       </main>

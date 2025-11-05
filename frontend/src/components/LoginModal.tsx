@@ -107,7 +107,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
 
             {/* Описание */}
             <p className="text-white text-center mb-6 sm:mb-8 text-xs sm:text-sm premium-text">
-              Получайте бонусы и кэшбэк за прохождение тестов и развитие финансовой грамотности
+              Мы подберём для Вас персональные рекомендации и поможем подтянуть темы, где Вы ориентируетесь слабее
             </p>
 
             {/* Кнопка входа */}

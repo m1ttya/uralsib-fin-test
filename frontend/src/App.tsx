@@ -9,15 +9,35 @@ import AdminGate from './components/admin/AdminGate';
 type AppState = 'landing' | 'test-flow' | 'admin';
 
 function App() {
-  const [appState, setAppState] = useState<AppState>(() => (window.location.hash === '#admin' ? 'admin' : 'landing'));
+  const [appState, setAppState] = useState<AppState>(() => {
+    if (window.location.hash === '#admin') return 'admin';
+    try {
+      const saved = localStorage.getItem('testFlowState_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data && (data.flowState === 'categories' || data.flowState === 'test' || data.flowState === 'results')) {
+          return 'test-flow';
+        }
+      }
+    } catch {}
+    return 'landing';
+  });
+
+  // Always start at the very top on initial mount and disable browser scroll restoration
+  useEffect(() => {
+    try { (history as any).scrollRestoration = 'manual'; } catch {}
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   // keep appState in sync with hash
   useEffect(() => {
     const onHashChange = () => {
       if (window.location.hash === '#admin') {
         setAppState('admin');
+        setLoginOpen(false); // Close login modal when entering admin
       } else if (window.location.hash === '') {
         setAppState('landing');
+        setLoginOpen(false); // Close login modal when returning to landing
       }
     };
     window.addEventListener('hashchange', onHashChange);

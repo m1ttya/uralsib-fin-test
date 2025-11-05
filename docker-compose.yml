@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000/api
+    command: npm run dev -- --host 0.0.0.0
+
+  # Backend сервис (когда будет готов)
+  backend:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+    command: sh -c "npm ci && npm run dev"
+    environment:
+      - NODE_ENV=development
