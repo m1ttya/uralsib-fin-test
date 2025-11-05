@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: uralsib-fin-test
+    name: uralsib-fin-test-v2
     runtime: node
     buildCommand: |
       cd backend
