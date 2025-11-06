@@ -25,7 +25,7 @@ export default function AboutSection() {
     },
   ];
 
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
 
   return (
     <section id="about" className="py-12 md:py-20 scroll-mt-24">
@@ -33,7 +33,7 @@ export default function AboutSection() {
         <h2 className="text-2xl md:text-4xl font-bold text-primary text-center mb-10">О нас</h2>
         <div className="space-y-4">
           {items.map((it, idx) => {
-            const open = openIndex === idx;
+            const open = openIndices.has(idx);
             const panelId = `about-panel-${idx}`;
             const btnId = `about-button-${idx}`;
             return (
@@ -42,7 +42,15 @@ export default function AboutSection() {
                   id={btnId}
                   aria-controls={panelId}
                   aria-expanded={open}
-                  onClick={() => setOpenIndex(open ? null : idx)}
+                  onClick={() => {
+                    const newOpenIndices = new Set(openIndices);
+                    if (open) {
+                      newOpenIndices.delete(idx);
+                    } else {
+                      newOpenIndices.add(idx);
+                    }
+                    setOpenIndices(newOpenIndices);
+                  }}
                   className="w-full text-left p-6 md:p-7 flex items-center justify-between"
                 >
                   <span className="font-semibold text-gray-900 text-xl md:text-2xl">{it.title}</span>

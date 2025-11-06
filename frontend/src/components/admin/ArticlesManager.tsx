@@ -138,9 +138,15 @@ export default function ArticlesManager() {
 
   // Toggle status
   const handleToggleStatus = async (article: Article) => {
+    const originalArticles = [...articles];
+    const newStatus = article.status === 'published' ? 'draft' : 'published';
+
+    // Optimistic update - обновляем локально сразу
+    setArticles(prev => prev.map(a =>
+      a.id === article.id ? { ...a, status: newStatus } : a
+    ));
+
     try {
-      const newStatus = article.status === 'published' ? 'draft' : 'published';
-      
       const response = await fetch(`/api/articles/admin/${article.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -151,12 +157,15 @@ export default function ArticlesManager() {
       });
 
       if (!response.ok) {
+        // Откатываем изменения при ошибке
+        setArticles(originalArticles);
         throw new Error('Failed to update status');
       }
-
-      await loadArticles();
+      // Не перезагружаем все статьи - оптимистическое обновление уже применилось
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status');
+      // Откатываем изменения при ошибке
+      setArticles(originalArticles);
     }
   };
 
@@ -227,93 +236,91 @@ export default function ArticlesManager() {
   if (editingArticle) {
     return (
       <div>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">
-            {isCreating ? 'Создание статьи' : 'Редактирование статьи'}
-          </h2>
-          
-          {/* Article metadata */}
-          <div className="mb-4 p-4 bg-gray-50 rounded">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Заголовок</label>
-                <input
-                  type="text"
-                  value={editingArticle.title}
-                  onChange={(e) => setEditingArticle({
-                    ...editingArticle,
-                    title: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Статус</label>
-                <select
-                  value={editingArticle.status}
-                  onChange={(e) => setEditingArticle({
-                    ...editingArticle,
-                    status: e.target.value as 'draft' | 'published'
-                  })}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="draft">Черновик</option>
-                  <option value="published">Опубликовано</option>
-                </select>
-              </div>
+        <h2 className="text-xl font-semibold text-primary mb-1">
+          {isCreating ? 'Создание статьи' : 'Редактирование статьи'}
+        </h2>
+
+        {/* Article metadata */}
+        <div className="mt-4 mb-6 p-4 bg-gray-50 rounded">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Заголовок</label>
+              <input
+                type="text"
+                value={editingArticle.title}
+                onChange={(e) => setEditingArticle({
+                  ...editingArticle,
+                  title: e.target.value
+                })}
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
             </div>
-            
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-2">Теги (выберите продукты)</label>
-              <div className="space-y-2">
-                {Object.keys(productsByTopic).length === 0 ? (
-                  <div className="text-sm text-gray-500">Продукты ещё не настроены. Откройте вкладку «Продукты».</div>
-                ) : (
-                  Object.entries(productsByTopic).map(([cat, items]) => (
-                    <div key={cat} className="border rounded p-2">
-                      <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">{cat}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {items.map((it) => {
-                          const selected = (editingArticle.tags || []).some((t: any) =>
-                              (typeof t === 'string' && t === it.title) ||
-                              (t && (t.linkUrl === it.linkUrl || t.title === it.title))
-                            );
-                          return (
-                            <button
-                              type="button"
-                              key={it.linkUrl}
-                              onClick={() => {
-                                setEditingArticle(prev => {
-                                  if (!prev) return prev;
-                                  const current = (prev.tags || []) as ProductRef[];
-                                  const exists = current.some((t: any) =>
-                                    (typeof t === 'string' && t === it.title) ||
-                                    (t && (t.linkUrl === it.linkUrl || t.title === it.title))
-                                  );
-                                  const next = exists
-                                    ? current.filter((t: any) => !(
-                                        (typeof t === 'string' && t === it.title) ||
-                                        (t && (t.linkUrl === it.linkUrl || t.title === it.title))
-                                      ))
-                                    : [...current, { ...it, category: cat }];
-                                  return { ...prev, tags: next };
-                                });
-                              }}
-                              className={`px-3 py-1 rounded-full text-sm border ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-                            >
-                              {(it.title || '').replace(/^https?:\/\//,'')}
-                            </button>
+            <div>
+              <label className="block text-sm font-medium mb-1">Статус</label>
+              <select
+                value={editingArticle.status}
+                onChange={(e) => setEditingArticle({
+                  ...editingArticle,
+                  status: e.target.value as 'draft' | 'published'
+                })}
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="draft">Черновик</option>
+                <option value="published">Опубликовано</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-2">Теги (выберите продукты)</label>
+            <div className="space-y-2">
+              {Object.keys(productsByTopic).length === 0 ? (
+                <div className="text-sm text-gray-500">Продукты ещё не настроены. Откройте вкладку «Продукты».</div>
+              ) : (
+                Object.entries(productsByTopic).map(([cat, items]) => (
+                  <div key={cat} className="border rounded p-2">
+                    <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">{cat}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {items.map((it) => {
+                        const selected = (editingArticle.tags || []).some((t: any) =>
+                            (typeof t === 'string' && t === it.title) ||
+                            (t && (t.linkUrl === it.linkUrl || t.title === it.title))
                           );
-                        })}
-                      </div>
+                        return (
+                          <button
+                            type="button"
+                            key={it.linkUrl}
+                            onClick={() => {
+                              setEditingArticle(prev => {
+                                if (!prev) return prev;
+                                const current = (prev.tags || []) as ProductRef[];
+                                const exists = current.some((t: any) =>
+                                  (typeof t === 'string' && t === it.title) ||
+                                  (t && (t.linkUrl === it.linkUrl || t.title === it.title))
+                                );
+                                const next = exists
+                                  ? current.filter((t: any) => !(
+                                      (typeof t === 'string' && t === it.title) ||
+                                      (t && (t.linkUrl === it.linkUrl || t.title === it.title))
+                                    ))
+                                  : [...current, { ...it, category: cat }];
+                                return { ...prev, tags: next };
+                              });
+                            }}
+                            className={`px-3 py-1 rounded-full text-sm border ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                          >
+                            {(it.title || '').replace(/^https?:\/\//,'')}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))
-                )}
-              </div>
-              {!!(editingArticle.tags || []).length && (
-                <div className="mt-2 text-xs text-gray-600">Выбрано: {(editingArticle.tags || []).length}</div>
+                  </div>
+                ))
               )}
             </div>
+            {!!(editingArticle.tags || []).length && (
+              <div className="mt-2 text-xs text-gray-600">Выбрано: {(editingArticle.tags || []).length}</div>
+            )}
           </div>
         </div>
 
@@ -331,12 +338,14 @@ export default function ArticlesManager() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Управление статьями</h2>
-        
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-primary mb-1">Управление статьями</h2>
+          <div className="text-gray-600 text-sm mb-3">Создание и редактирование статей</div>
+        </div>
         <div className="flex gap-3">
           {/* File upload */}
-          <label className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer transition-colors">
+          <label className="inline-flex items-center gap-2 px-4 h-9 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 cursor-pointer">
             {uploadingFile ? 'Загрузка...' : 'Загрузить файл'}
             <input
               type="file"
@@ -346,11 +355,11 @@ export default function ArticlesManager() {
               className="hidden"
             />
           </label>
-          
+
           {/* Create new article */}
           <button
             onClick={handleCreate}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-white hover:bg-secondary"
           >
             Создать статью
           </button>
@@ -358,7 +367,7 @@ export default function ArticlesManager() {
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+        <div className="mt-6 mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700">
           {error}
           <button
             onClick={() => setError(null)}
@@ -370,7 +379,7 @@ export default function ArticlesManager() {
       )}
 
       {/* Articles list */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -406,7 +415,10 @@ export default function ArticlesManager() {
                         ? 'bg-green-100 text-green-800'
                         : 'bg-yellow-100 text-yellow-800'
                     }`}
-                    onClick={() => handleToggleStatus(article)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleStatus(article);
+                    }}
                   >
                     {article.status === 'published' ? 'Опубликовано' : 'Черновик'}
                   </span>
@@ -420,13 +432,13 @@ export default function ArticlesManager() {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => handleEdit(article.id)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 mr-2"
                   >
                     Редактировать
                   </button>
                   <button
                     onClick={() => handleDelete(article.id)}
-                    className="text-red-600 hover:text-red-900"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600"
                   >
                     Удалить
                   </button>

@@ -5,11 +5,31 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
     <button
       onClick={onClick}
       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-        active ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+        active ? 'bg-primary text-white shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
       }`}
     >
       {children}
     </button>
+  );
+}
+
+// Компонент для заголовков страниц в админ-панели
+function SectionTitle({ children, subtitle }: { children: React.ReactNode; subtitle?: string }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-xl font-semibold text-primary mb-1">{children}</h2>
+      {subtitle && <div className="text-gray-600 text-sm">{subtitle}</div>}
+    </div>
+  );
+}
+
+// Компонент для заголовков секций внутри страниц
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="border-b border-gray-200 pb-2 mb-4">
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      {subtitle && <div className="text-xs text-gray-500 mt-0.5">{subtitle}</div>}
+    </div>
   );
 }
 
@@ -215,30 +235,28 @@ function ProductsEditor() {
 
   return (
     <div>
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="text-lg font-semibold text-primary">Редактор рекомендаций (products_by_topic.json)</div>
-          <CategoryHint />
+          <h2 className="text-xl font-semibold text-primary mb-1">Редактор рекомендаций (products_by_topic.json)</h2>
+          <div className="mb-3"><CategoryHint /></div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <IconActionButton title="Отменить" onClick={onCancel}>
-                <UndoIcon />
-                <span className="hidden sm:inline">Отменить</span>
-              </IconActionButton>
-            <IconActionButton title="Добавить категорию" onClick={addCategory}>
-              <PlusIcon />
-              <span className="hidden sm:inline">Категория</span>
+          <IconActionButton title="Отменить" onClick={onCancel}>
+              <UndoIcon />
+              <span className="hidden sm:inline">Отменить</span>
             </IconActionButton>
-            <Btn variant="primary" onClick={onSave} disabled={saving || hasErrors}>
-  <SaveIcon />
-  <span className="hidden sm:inline">{saving ? 'Сохранение…' : 'Сохранить'}</span>
+          <IconActionButton title="Добавить категорию" onClick={addCategory}>
+            <PlusIcon />
+            <span className="hidden sm:inline">Категория</span>
+          </IconActionButton>
+          <Btn variant="primary" onClick={onSave} disabled={saving || hasErrors}>
+<SaveIcon />
+<span className="hidden sm:inline">{saving ? 'Сохранение…' : 'Сохранить'}</span>
 </Btn>
-          </div>
         </div>
       </div>
-      {error && <div className="px-6 py-3 text-sm text-red-600 border-b border-red-100 bg-red-50">{error}</div>}
-      <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {error && <div className="my-4 p-3 text-sm text-red-600 border border-red-100 bg-red-50 rounded-lg">{error}</div>}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {loading ? (
           <div className="text-gray-500">Загрузка…</div>
         ) : (
@@ -1074,50 +1092,57 @@ function TestsManager() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-1 border-r p-4">
-        <div className="text-lg font-semibold text-primary mb-3">Тесты</div>
-        <ImportForm onDone={() => { loadTree(); }} />
-        <div className="h-4" />
-        {loading ? (
-          <div className="text-gray-500">Загрузка…</div>
-        ) : tree ? (
-          renderTree(tree)
-        ) : (
-          <div className="text-gray-500">Нет данных</div>
-        )}
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-primary mb-1">Тесты</h2>
+          <div className="text-gray-600 text-sm mb-3">Управление тестами, вопросами и настройками</div>
+        </div>
       </div>
-      <div className="lg:col-span-2 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="font-semibold text-gray-800">{selectedPath ? selectedPath : 'Редактор тестов'}</div>
-          {selectedPath && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={deleteFile}
-                disabled={deleting}
-                className="px-3 h-9 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 inline-flex items-center gap-2"
-                title="Удалить тест"
-              >
-                <XIcon />
-                <span className="hidden sm:inline">{deleting ? 'Удаление…' : 'Удалить'}</span>
-              </button>
-              <button onClick={saveFile} disabled={saving || errs.length > 0} className="px-3 h-9 rounded-lg bg-primary text-white hover:bg-secondary disabled:opacity-50 inline-flex items-center gap-2"><SaveIcon /> <span className="hidden sm:inline">{saving? 'Сохранение…' : 'Сохранить'}</span></button>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 border-r p-4">
+          <ImportForm onDone={() => { loadTree(); }} />
+          <div className="h-4" />
+          {loading ? (
+            <div className="text-gray-500">Загрузка…</div>
+          ) : tree ? (
+            renderTree(tree)
+          ) : (
+            <div className="text-gray-500">Нет данных</div>
           )}
         </div>
-        <div className="border rounded-xl bg-white p-3 min-h-[300px]">
-          {!json ? (
-            <div className="text-gray-500">Выберите тест слева, чтобы открыть редактор вопросов</div>
-          ) : Array.isArray(json?.questions) ? (
-            <QuestionsEditor json={json} errs={errs} updateQuestion={updateQuestion} removeQuestion={removeQuestion} addQuestion={addQuestion} setJson={setJson} productsByTopicForTests={productsByTopicForTests} />
-          ) : (
-            <div>
-              <div className="text-sm text-gray-600 mb-2">Структура файла не распознана как тест. Показан сырой JSON.</div>
-              <textarea value={JSON.stringify(json, null, 2)} onChange={e=>{
-                try { setJson(JSON.parse(e.target.value)); setError(null);} catch { /* ignore */ }
-              }} className="w-full h-[60vh] font-mono text-xs outline-none" />
-            </div>
-          )}
+        <div className="lg:col-span-2 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold text-gray-800">{selectedPath ? selectedPath : 'Редактор тестов'}</div>
+            {selectedPath && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={deleteFile}
+                  disabled={deleting}
+                  className="px-3 h-9 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 inline-flex items-center gap-2"
+                  title="Удалить тест"
+                >
+                  <XIcon />
+                  <span className="hidden sm:inline">{deleting ? 'Удаление…' : 'Удалить'}</span>
+                </button>
+                <button onClick={saveFile} disabled={saving || errs.length > 0} className="px-3 h-9 rounded-lg bg-primary text-white hover:bg-secondary disabled:opacity-50 inline-flex items-center gap-2"><SaveIcon /> <span className="hidden sm:inline">{saving? 'Сохранение…' : 'Сохранить'}</span></button>
+              </div>
+            )}
+          </div>
+          <div className="border rounded-xl bg-white p-3 min-h-[300px]">
+            {!json ? (
+              <div className="text-gray-500">Выберите тест слева, чтобы открыть редактор вопросов</div>
+            ) : Array.isArray(json?.questions) ? (
+              <QuestionsEditor json={json} errs={errs} updateQuestion={updateQuestion} removeQuestion={removeQuestion} addQuestion={addQuestion} setJson={setJson} productsByTopicForTests={productsByTopicForTests} />
+            ) : (
+              <div>
+                <div className="text-sm text-gray-600 mb-2">Структура файла не распознана как тест. Показан сырой JSON.</div>
+                <textarea value={JSON.stringify(json, null, 2)} onChange={e=>{
+                  try { setJson(JSON.parse(e.target.value)); setError(null);} catch { /* ignore */ }
+                }} className="w-full h-[60vh] font-mono text-xs outline-none" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1175,37 +1200,42 @@ function CoursesManager() {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-1 border-r p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-lg font-semibold text-primary">Курсы</div>
-        </div>
-        <div className="space-y-2">
-          {loading ? (
-            <div className="text-gray-500">Загрузка…</div>
-          ) : error ? (
-            <div className="text-red-600 text-sm">{error}</div>
-          ) : courses.length === 0 ? (
-            <div className="text-gray-500">Курсов пока нет</div>
-          ) : (
-            courses.map((course) => (
-              <button
-                key={course.id}
-                className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-              >
-                <div className="font-medium text-gray-900">{course.title}</div>
-                {course.description && (
-                  <div className="text-sm text-gray-500 mt-1">{course.description}</div>
-                )}
-              </button>
-            ))
-          )}
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-primary mb-1">Курсы</h2>
+          <div className="text-gray-600 text-sm mb-3">Управление обучающими курсами и программами</div>
         </div>
       </div>
-      <div className="lg:col-span-2 p-4">
-        <div className="text-center py-12">
-          <div className="text-gray-500 mb-2">Управление курсами</div>
-          <div className="text-sm text-gray-400">Здесь будет интерфейс для создания и редактирования курсов</div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 border-r p-4">
+          <div className="space-y-2">
+            {loading ? (
+              <div className="text-gray-500">Загрузка…</div>
+            ) : error ? (
+              <div className="text-red-600 text-sm">{error}</div>
+            ) : courses.length === 0 ? (
+              <div className="text-gray-500">Курсов пока нет</div>
+            ) : (
+              courses.map((course) => (
+                <button
+                  key={course.id}
+                  className="w-full text-left p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                >
+                  <div className="font-medium text-gray-900">{course.title}</div>
+                  {course.description && (
+                    <div className="text-sm text-gray-500 mt-1">{course.description}</div>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="lg:col-span-2 p-4">
+          <div className="text-center py-12">
+            <div className="text-gray-500 mb-2">Управление курсами</div>
+            <div className="text-sm text-gray-400">Здесь будет интерфейс для создания и редактирования курсов</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1298,13 +1328,17 @@ function Overview() {
         if (aRes.ok) {
           const meta = await aRes.json();
           // meta - это массив статей с информацией о docx и html
-          let docx = 0, html = 0, missingHtml = 0;
-          meta.forEach((article: any) => {
-            if (article.hasDocx) docx++;
-            if (article.hasHtml) html++;
-            if (article.hasDocx && !article.hasHtml) missingHtml++;
-          });
-          setArticles({ groups: meta.length, docx, html, missingHtml });
+          if (Array.isArray(meta)) {
+            let docx = 0, html = 0, missingHtml = 0;
+            meta.forEach((article: any) => {
+              if (article.hasDocx) docx++;
+              if (article.hasHtml) html++;
+              if (article.hasDocx && !article.hasHtml) missingHtml++;
+            });
+            setArticles({ groups: meta.length, docx, html, missingHtml });
+          } else {
+            setArticles({ groups: 0, docx: 0, html: 0, missingHtml: 0 });
+          }
         }
         // products
         const pRes = await fetch('/api/admin/products_by_topic', { credentials: 'include' });
@@ -1323,18 +1357,13 @@ function Overview() {
     fetchAll();
   }, []);
 
-  const SectionHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
-    <div className="border-b border-gray-200 pb-2 mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-      <div className="text-xs text-gray-500 mt-0.5">{subtitle}</div>
-    </div>
-  );
-
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold text-primary mb-1">Обзор</h2>
-        <div className="text-gray-600 text-sm">Подробная аналитика и статистика по проекту</div>
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-primary mb-1">Обзор</h2>
+          <div className="text-gray-600 text-sm mb-3">Подробная аналитика и статистика по проекту</div>
+        </div>
       </div>
 
       {error && <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg">{error}</div>}
@@ -1509,25 +1538,25 @@ export default function AdminPanel() {
         )}
 
         {tab === 'tests' && (
-          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-0 overflow-hidden">
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <TestsManager />
           </section>
         )}
 
         {tab === 'products' && (
-          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-0 overflow-hidden">
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <ProductsEditor />
           </section>
         )}
 
         {tab === 'articles' && (
-          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-0 overflow-hidden">
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <ArticlesManager />
           </section>
         )}
 
         {tab === 'courses' && (
-          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-0 overflow-hidden">
+          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <CoursesManager />
           </section>
         )}
