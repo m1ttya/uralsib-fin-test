@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -1486,14 +1487,15 @@ function Overview() {
 }
 
 export default function AdminPanel() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<'overview' | 'tests' | 'products' | 'articles' | 'courses'>('overview');
 
   useEffect(() => {
-    // Ensure we are on the admin hash
+    // Ensure we are on the admin route
     if (window.location.hash !== '#admin') {
-      window.location.hash = '#admin';
+      navigate('/admin');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1511,7 +1513,7 @@ export default function AdminPanel() {
               onClick={async (e) => {
                 e.preventDefault();
                 try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
-                window.location.hash = '';
+                navigate('/');
               }}
               className="text-sm text-gray-600 hover:text-primary inline-flex items-center gap-2"
             >

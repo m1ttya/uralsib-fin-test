@@ -4,6 +4,8 @@ import path from 'path';
 import { testsRouter } from './tests/router';
 import articlesRouter from './articles/router';
 import { attachAuth, ensureAdmin } from './auth';
+import usersRouter from './users';
+import testResultsRouter from './tests/results';
 import fs from 'fs/promises';
 import multer from 'multer';
 import mammoth from 'mammoth';
@@ -23,6 +25,8 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/tests', testsRouter);
 app.use('/api/articles', articlesRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/tests', testResultsRouter);
 
 // Static for articles storage (moved to backend/uploads/articles)
 const ARTICLES_DIR = path.resolve(__dirname, '../uploads/articles');

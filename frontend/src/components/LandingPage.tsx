@@ -1,4 +1,7 @@
-type Props = { onStartTest: () => void };
+type Props = {
+  onShowLoginModal: () => void;
+  onStartTest: () => void;
+};
 
 import NavBar from './NavBar';
 import HeroSection from './sections/HeroSection';
@@ -9,11 +12,11 @@ import GameSection from './sections/GameSection';
 import { ENABLE_GAME } from '../config';
 import Footer from './sections/Footer';
 
-export default function LandingPage({ onStartTest }: Props) {
+export default function LandingPage({ onShowLoginModal, onStartTest }: Props) {
   return (
     <div className="min-h-screen w-full">
-      <NavBar onStart={onStartTest} />
-      <HeroSection onStart={onStartTest} />
+      <NavBar onShowLoginModal={onShowLoginModal} />
+      <HeroSection onStartTest={onStartTest} />
       <PersonasSection />
       <TrainingSection />
       <AboutSection />

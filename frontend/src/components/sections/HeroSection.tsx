@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-export default function HeroSection({ onStart }: { onStart: () => void }) {
+export default function HeroSection({ onStartTest }: { onStartTest: () => void }) {
   return (
     <section id="home" className="pt-0 pb-12 md:pt-4 md:pb-20 scroll-mt-24">
       <div className="container mx-auto px-4 max-w-5xl text-center">
@@ -13,7 +13,7 @@ export default function HeroSection({ onStart }: { onStart: () => void }) {
         <motion.p initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.1,duration:0.6}} className="text-xl md:text-2xl text-gray-700 mb-10">
           Это не займет много времени!
         </motion.p>
-        <motion.button initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.2,duration:0.6}} whileHover={{scale:1.02, transition:{ duration: 0.12 }}} whileTap={{scale:0.98, transition:{ duration: 0.08 }}} onClick={onStart} className="px-10 py-5 rounded-full text-white shadow-lg bg-gradient-to-r from-primary to-secondary [background-size:200%_100%] [background-position:0_0] hover:[background-position:100%_0] transition-[background-position] duration-500 ease-out">
+        <motion.button initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.2,duration:0.6}} whileHover={{scale:1.02, transition:{ duration: 0.12 }}} whileTap={{scale:0.98, transition:{ duration: 0.08 }}} onClick={onStartTest} className="px-10 py-5 rounded-full text-white shadow-lg bg-gradient-to-r from-primary to-secondary [background-size:200%_100%] [background-position:0_0] hover:[background-position:100%_0] transition-[background-position] duration-500 ease-out">
           Начать тест
         </motion.button>
       </div>

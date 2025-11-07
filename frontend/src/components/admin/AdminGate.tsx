@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminGate({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
   const [state, setState] = useState<'checking' | 'unauth' | 'authed'>('checking');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -80,7 +82,7 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
             Административная панель доступна только на компьютере или планшете с экраном шире 768 пикселей.
           </p>
           <button
-            onClick={() => { window.location.hash = ''; }}
+            onClick={() => navigate('/')}
             className="w-full py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-colors font-medium"
           >
             На главную
@@ -101,11 +103,11 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
           </label>
           <label className="block mb-4">
             <div className="text-sm text-gray-600 mb-1">Пароль</div>
-            <input value={password} onChange={e=>setPassword(e.target.value)} type="password" className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/30" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif' }} />
+            <input value={password} onChange={e=>setPassword(e.target.value)} type="password" className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/30" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif', fontSize: '16px' }} />
           </label>
           {error && <div className="text-sm text-red-600 mb-3">{error}</div>}
           <button type="submit" className="w-full py-2.5 rounded-lg bg-primary text-white hover:bg-secondary transition-colors">Войти</button>
-          <button type="button" onClick={()=>{ window.location.hash = ''; }} className="w-full py-2.5 rounded-lg mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700">Назад</button>
+          <button type="button" onClick={()=> navigate('/')} className="w-full py-2.5 rounded-lg mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700">Назад</button>
         </form>
       </div>
     );

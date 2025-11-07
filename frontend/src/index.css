@@ -3,6 +3,72 @@
 /* Pixel font with Cyrillic support */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* Force password fields to show dots instead of logos */
+/* Chrome/Edge/Safari */
+input[type="password"] {
+  text-security: disc !important;
+  -webkit-text-security: disc !important;
+}
+
+/* Firefox - используем простой type="password" без дополнительных стилей */
+/* Инлайн стили в компоненте обеспечивают правильный шрифт */
+
+/* Hide browser password reveal icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-caps-lock-indicator {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/* Force consistent styling for autofilled inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #374151 inset !important;
+  -webkit-text-fill-color: white !important;
+  box-shadow: 0 0 0 1000px #374151 inset !important;
+  background-color: #374151 !important;
+  color: white !important;
+  caret-color: white !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+}
+
+/* Firefox */
+input:-moz-autofill,
+input:-moz-autofill:hover,
+input:-moz-autofill:focus {
+  background-color: #374151 !important;
+  color: white !important;
+  box-shadow: 0 0 0 1000px #374151 inset !important;
+}
+
+/* Ensure focus ring works with autofill */
+input:focus:-webkit-autofill {
+  box-shadow: 0 0 0 1000px #374151 inset, 0 0 0 2px #3B175C !important;
+  outline: none !important;
+}
+
+/* Common input styling for login form */
+input[type="email"],
+input[type="text"],
+input[type="password"] {
+  border: 2px solid transparent;
+}
+
+input:focus {
+  outline: none;
+  border-color: #3B175C;
+  box-shadow: 0 0 0 2px rgba(59, 23, 92, 0.5);
+}
+
 /* Custom local font */
 @font-face {
   font-family: 'Pixel Cyr';
@@ -264,7 +330,7 @@
   .modal-overlay { align-items: flex-start; justify-content: center; }
 
   /* Полноэкранная модалка на мобилках */
-  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.items-center.justify-center.z-50.p-4 > div {
+  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.z-50 > div {
     width: 100vw !important;
     max-width: 100vw !important;
     height: 100vh !important;
@@ -758,9 +824,76 @@
 
 /* Не добавляйте font-family здесь — Tailwind сделает это сам */
 
-/* Форсируем нормальную маску в инпуте пароля и системный шрифт, чтобы не подхватывался кастомный символ из фирменного шрифта */
-input[type="password"] {
-  -webkit-text-security: disc;
-  text-security: disc;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+/* Стили для поля с иконкой глаза */
+.password-input-container {
+  position: relative;
+  /* Убираем flex-direction, чтобы кнопка была по центру инпута */
+}
+
+/* Применяем стили ко всем инпутам внутри password-input-container */
+.password-input-container input[type="password"],
+.password-input-container input[type="text"] {
+  padding-right: 48px !important;
+  height: 52px !important;
+  display: block !important;
+  /* Fallback для других браузеров - должен работать по умолчанию с type="password" */
+}
+
+.password-toggle {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 6px !important;
+  color: #9CA3AF !important;
+  transition: color 0.2s !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 100 !important;
+  height: 40px !important;
+  width: 40px !important;
+  /* Убираем все внешние отступы */
+  margin: 0 !important;
+}
+
+.password-toggle:hover {
+  color: #D1D5DB !important;
+}
+
+.password-toggle:focus {
+  outline: none !important;
+}
+/* Инлайн стили в компоненте обеспечивают правильную высоту и отступы */
+
+.password-toggle {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  padding: 10px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Модальное окно логина на мобильных */
+@media (max-width: 475px) {
+  /* Принудительно делаем модальное окно на весь экран */
+  .fixed.inset-0.bg-black.bg-opacity-50.backdrop-blur-sm.flex.z-50 > div {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    border-radius: 0 !important;
+  }
 }

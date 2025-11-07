@@ -1,18 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-function LogoWithSecretClicks() {
+function LogoWithSecretClicks({ onClose }: { onClose?: () => void }) {
+  const navigate = useNavigate();
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (count === 0) return;
-    const t = setTimeout(() => setCount(0), 1500); // окно сброса
+    const t = setTimeout(() => setCount(0), 1500);
     return () => clearTimeout(t);
   }, [count]);
   const onClick = () => {
     const next = count + 1;
     if (next >= 5) {
-      // Переход в админ-панель
-      window.location.hash = '#admin';
       setCount(0);
+      // Сначала закрываем модал, потом навигация
+      if (onClose) onClose();
+      setTimeout(() => {
+        navigate('/admin');
+      }, 100);
       return;
     }
     setCount(next);
@@ -28,39 +35,279 @@ function LogoWithSecretClicks() {
     </div>
   );
 }
-import { motion, AnimatePresence } from 'framer-motion';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: () => void;
-  onSkip: () => void;
+  onSkip?: () => void;
+  fromStartTest?: boolean;
 };
 
-export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) {
-  const [isChecked, setIsChecked] = useState(false);
+type Mode = 'login' | 'register';
+
+export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = false }: Props) {
+  const [mode, setMode] = useState<Mode>('login');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+    termsAccepted: false
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const [shouldRender, setShouldRender] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(true);
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+  const { login, register } = useAuth();
+
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const validationTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
+      setMode('login'); // Сбрасываем режим на логин при каждом открытии
     }
   }, [isOpen]);
+
+  // Синхронизация shouldRender с isOpen
+  useEffect(() => {
+    if (!isOpen && shouldRender) {
+      // При закрытии модала через внешний вызов onClose
+      setShouldRender(false);
+    }
+  }, [isOpen, shouldRender]);
+
+  useEffect(() => {
+    if (mode === 'login' && shouldRender) {
+      emailInputRef.current?.focus();
+    }
+  }, [mode, shouldRender]);
+
+  // Очистка таймера при размонтировании
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        window.clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleClose = () => {
     setShouldRender(false);
     setTimeout(() => {
       onClose();
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        name: '',
+        termsAccepted: false
+      });
+      setErrors({});
+      setMessage('');
+      setShowPassword(true);
+      setShowConfirmPassword(true);
     }, 200);
   };
 
-  const handleSkip = () => {
-    setShouldRender(false);
-    setTimeout(() => {
-      onSkip();
-    }, 200);
+  const handleModeChange = (newMode: Mode) => {
+    setMode(newMode);
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      name: '',
+      termsAccepted: false
+    });
+    setErrors({});
+    setMessage('');
+    setShowPassword(true);
+    setShowConfirmPassword(true);
+    setTouchedFields(new Set());
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email) {
+      newErrors.email = 'Обязательное поле';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Некорректный email';
+    }
+
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = 'Минимум 8 символов';
+    } else if (!/[a-zA-Z]/.test(formData.password) || !/\d/.test(formData.password)) {
+      newErrors.password = 'Минимум 1 буква и 1 цифра';
+    }
+
+    if (mode === 'register') {
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Пароли не совпадают';
+      }
+
+      if (!formData.name || formData.name.length < 2) {
+        newErrors.name = 'Минимум 2 символа';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Проверка только "тронутых" полей
+  const validateTouchedFields = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Проверяем email если он был изменен
+    if (touchedFields.has('email')) {
+      if (!formData.email) {
+        newErrors.email = 'Обязательное поле';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Некорректный email';
+      }
+    }
+
+    // Проверяем password если он был изменен
+    if (touchedFields.has('password')) {
+      if (!formData.password || formData.password.length < 8) {
+        newErrors.password = 'Минимум 8 символов';
+      } else if (!/[a-zA-Z]/.test(formData.password) || !/\d/.test(formData.password)) {
+        newErrors.password = 'Минимум 1 буква и 1 цифра';
+      }
+    }
+
+    // В режиме регистрации проверяем дополнительные поля
+    if (mode === 'register') {
+      // Проверяем name если он был изменен
+      if (touchedFields.has('name')) {
+        if (!formData.name || formData.name.length < 2) {
+          newErrors.name = 'Минимум 2 символа';
+        }
+      }
+
+      // Проверяем confirmPassword если он был изменен или если password был изменен
+      if (touchedFields.has('confirmPassword') || touchedFields.has('password')) {
+        // Проверяем совпадение только если оба поля не пустые
+        if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+          newErrors.confirmPassword = 'Пароли не совпадают';
+        }
+      }
+    }
+
+    setErrors(newErrors);
+  };
+
+  // Проверка одного поля (мгновенная)
+  const validateField = (fieldName: string, value?: string) => {
+    // Если значение не передано, берем из formData
+    const currentValue = value !== undefined ? value : (formData[fieldName as keyof typeof formData] as string);
+
+    // Всегда удаляем ошибку для этого поля сначала
+    const newErrors = { ...errors };
+    delete newErrors[fieldName];
+
+    // Если поле пустое, просто удаляем ошибку и выходим
+    if (!currentValue) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Проверяем только если поле не пустое
+    if (mode === 'register') {
+      // Все проверки - только в режиме регистрации
+      if (fieldName === 'email') {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentValue)) {
+          newErrors.email = 'Некорректный email';
+        }
+      } else if (fieldName === 'password') {
+        if (currentValue.length < 8) {
+          newErrors.password = 'Минимум 8 символов';
+        } else if (!/[a-zA-Z]/.test(currentValue) || !/\d/.test(currentValue)) {
+          newErrors.password = 'Минимум 1 буква и 1 цифра';
+        }
+      } else if (fieldName === 'name') {
+        if (currentValue.length < 2) {
+          newErrors.name = 'Минимум 2 символа';
+        }
+      } else if (fieldName === 'confirmPassword') {
+        if (currentValue && formData.password && formData.password !== currentValue) {
+          newErrors.confirmPassword = 'Пароли не совпадают';
+        }
+      }
+    }
+
+    setErrors(newErrors);
+  };
+
+  // Валидация в реальном времени с debounce (только для регистрации)
+  const validateFormDebounced = () => {
+    if (mode !== 'register') return;
+
+    if (validationTimeoutRef.current) {
+      window.clearTimeout(validationTimeoutRef.current);
+    }
+    validationTimeoutRef.current = window.setTimeout(() => {
+      validateTouchedFields();
+    }, 500);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (mode === 'login') {
+        await login(formData.email, formData.password);
+        setMessage('Вход выполнен успешно!');
+        if (fromStartTest) {
+          // Если пользователь пришел с кнопки "начать тест", закрываем модал и переходим к тестам
+          setTimeout(() => {
+            handleClose();
+            setTimeout(() => {
+              window.location.href = '/test';
+            }, 200);
+          }, 500);
+        } else {
+          // Иначе просто закрываем модал
+          setTimeout(() => handleClose(), 1000);
+        }
+      } else {
+        await register({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name
+        });
+        setMessage('Регистрация успешна!');
+        if (fromStartTest) {
+          // Если пользователь пришел с кнопки "начать тест", закрываем модал и переходим к тестам
+          setTimeout(() => {
+            handleClose();
+            setTimeout(() => {
+              window.location.href = '/test';
+            }, 200);
+          }, 500);
+        } else {
+          // Иначе просто закрываем модал
+          setTimeout(() => handleClose(), 1000);
+        }
+      }
+    } catch (error: any) {
+      setMessage(error.message || 'Произошла ошибка');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -78,11 +325,10 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-screen h-[100dvh] sm:h-auto sm:w-full sm:max-w-sm rounded-none sm:rounded-2xl p-6 sm:p-8 relative"
+            className="w-screen h-[85dvh] sm:h-auto sm:w-full sm:max-w-[420px] rounded-none sm:rounded-3xl p-5 sm:p-7 relative"
             style={{ backgroundColor: '#252030' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Кнопка закрытия */}
             <button
               onClick={handleClose}
               className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
@@ -92,65 +338,246 @@ export default function LoginModal({ isOpen, onClose, onLogin, onSkip }: Props) 
               </svg>
             </button>
 
-            {/* Логотип Уралсиб (5 кликов для входа в админку) */}
-            <LogoWithSecretClicks />
+            <LogoWithSecretClicks onClose={onClose} />
 
-            {/* Заголовок */}
-            <h2 className="text-xl sm:text-2xl text-white text-center mb-3 sm:mb-4" style={{
-              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-              fontWeight: '700',
-              letterSpacing: '-0.02em',
-              lineHeight: '1.1'
-            }}>
-              Вход в Уралсиб
+            <h2 className="text-2xl sm:text-3xl text-white text-center mb-3 sm:mb-4 font-bold">
+              {mode === 'login' ? 'Вход в систему' : 'Регистрация'}
             </h2>
 
-            {/* Описание */}
-            <p className="text-white text-center mb-6 sm:mb-8 text-xs sm:text-sm premium-text">
-              Улучшайте свои знания с персональными рекомендациями и полезными материалами
+            <p className="text-white text-center mb-6 sm:mb-8 text-sm sm:text-base">
+              {mode === 'login'
+                ? 'Получите персональные рекомендации и полезные материалы'
+                : 'Создайте аккаунт для доступа ко всем функциям'}
             </p>
 
-            {/* Кнопка входа */}
-            <button
-              onClick={onLogin}
-              disabled={!isChecked}
-              className={`w-full py-3 sm:py-3 px-5 rounded-3xl premium-button transition-all duration-300 text-white text-base sm:text-base ${
-                isChecked 
-                  ? 'bg-button-login hover:bg-button-login-hover ring-2 ring-button-login/30' 
-                  : 'bg-button-login opacity-50'
-              }`}
-            >
-              Войти
-            </button>
+            {message && (
+              <div className={`mb-4 p-3 rounded-lg text-sm ${
+                message.includes('успех')
+                  ? 'bg-green-600 text-white'
+                  : 'bg-red-600 text-white'
+              }`}>
+                {message}
+              </div>
+            )}
 
-            {/* Кнопка пропустить */}
-            <button
-              onClick={handleSkip}
-              className="w-full py-3 sm:py-3 rounded-3xl premium-button text-white bg-button-skip hover:bg-button-skip-hover transition-all duration-300 mt-2 sm:mt-3 text-base sm:text-base"
-            >
-              Пропустить
-            </button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <input
+                  ref={emailInputRef}
+                  type="email"
+                  placeholder={mode === 'login' ? 'Email или имя пользователя' : 'Email'}
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setTouchedFields(prev => new Set(prev).add('email'));
+                    validateField('email', e.target.value);
+                  }}
+                  onBlur={() => {
+                    setTouchedFields(prev => new Set(prev).add('email'));
+                    validateField('email');
+                  }}
+                  autoComplete={mode === 'login' ? 'username' : 'email'}
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              {(errors.email || errors.general) && (
+                <div className="mt-0 pl-3">
+                  {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+                  {errors.general && <p className="text-red-500 text-xs">{errors.general}</p>}
+                </div>
+              )}
 
-            {/* Чекбокс согласия */}
-            <div className="flex items-start mt-4 sm:mt-6">
-              <input
-                type="checkbox"
-                id="consent"
-                checked={isChecked}
-                onChange={(e) => setIsChecked(e.target.checked)}
-                className="mt-1 mr-3"
-              />
-              <label htmlFor="consent" className="text-gray-400 text-xs sm:text-xs premium-text">
-                Я принимаю{' '}
-                <a href="#" className="underline hover:text-gray-300">
-                  условия использования сайта
-                </a>
-                , согласен с{' '}
-                <a href="#" className="underline hover:text-gray-300">
-                  политикой обработки персональных данных
-                </a>
-              </label>
+              {mode === 'register' && (
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Имя"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      setTouchedFields(prev => new Set(prev).add('name'));
+                      validateField('name', e.target.value);
+                    }}
+                    onBlur={() => {
+                      setTouchedFields(prev => new Set(prev).add('name'));
+                      validateField('name');
+                    }}
+                    autoComplete="name"
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              )}
+              {mode === 'register' && errors.name && (
+                <p className="text-red-500 text-xs mt-0 pl-3">{errors.name}</p>
+              )}
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "password" : "text"}
+                  placeholder="Пароль"
+                  value={formData.password}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    setTouchedFields(prev => new Set(prev).add('password'));
+                    validateField('password', e.target.value);
+                    // Если изменяем пароль, проверяем и подтверждение
+                    if (touchedFields.has('confirmPassword')) {
+                      validateField('confirmPassword');
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouchedFields(prev => new Set(prev).add('password'));
+                    validateField('password');
+                    // Если изменяем пароль, проверяем и подтверждение
+                    if (touchedFields.has('confirmPassword')) {
+                      validateField('confirmPassword');
+                    }
+                  }}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  className="w-full px-4 py-3 pr-12 rounded-2xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important', fontSize: '16px !important' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-[52px] text-gray-400 hover:text-white"
+                  aria-label={showPassword ? "Показать пароль" : "Скрыть пароль"}
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.password && <p className="text-red-500 text-xs mt-0 pl-3">{errors.password}</p>}
+
+              {mode === 'register' && (
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "password" : "text"}
+                    placeholder="Подтвердите пароль"
+                    value={formData.confirmPassword}
+                    onChange={(e) => {
+                      setFormData({ ...formData, confirmPassword: e.target.value });
+                      setTouchedFields(prev => new Set(prev).add('confirmPassword'));
+                      validateField('confirmPassword', e.target.value);
+                    }}
+                    onBlur={() => {
+                      setTouchedFields(prev => new Set(prev).add('confirmPassword'));
+                      validateField('confirmPassword');
+                    }}
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 pr-12 rounded-2xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                    style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important', fontSize: '16px !important' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-[52px] text-gray-400 hover:text-white"
+                    aria-label={showConfirmPassword ? "Показать пароль" : "Скрыть пароль"}
+                  >
+                    {showConfirmPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              )}
+              {mode === 'register' && errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-0 pl-3">{errors.confirmPassword}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading || (mode === 'register' && !formData.termsAccepted)}
+                className="w-full py-4 rounded-3xl bg-[#3B175C] hover:bg-[#452066] hover:shadow-md hover:shadow-primary/30 text-white font-semibold transition-all duration-500 ease-out disabled:opacity-50 disabled:hover:bg-[#3B175C] disabled:hover:shadow-none"
+              >
+                {isLoading ? 'Загрузка...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => handleModeChange(mode === 'login' ? 'register' : 'login')}
+                className="text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                {mode === 'login'
+                  ? 'Нет аккаунта? Зарегистрироваться'
+                  : 'Уже есть аккаунт? Войти'}
+              </button>
             </div>
+
+
+            {mode === 'register' && (
+              <div>
+                <div className="mt-6 flex items-start">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={formData.termsAccepted}
+                    onChange={(e) => {
+                      setFormData({ ...formData, termsAccepted: e.target.checked });
+                    }}
+                    className="mt-0.5 mr-3 w-4 h-4"
+                  />
+                  <label htmlFor="terms" className="text-gray-400 text-xs leading-tight">
+                    Я принимаю{' '}
+                    <a href="#" className="underline hover:text-gray-300 transition-colors">
+                      условия использования сайта
+                    </a>
+                    , согласен с{' '}
+                    <a href="#" className="underline hover:text-gray-300 transition-colors">
+                      политикой обработки персональных данных
+                    </a>
+                  </label>
+                </div>
+                {errors.termsAccepted && <p className="text-red-500 text-xs mt-0 pl-3">{errors.termsAccepted}</p>}
+              </div>
+            )}
+
+            {onSkip && mode === 'login' && (
+              <div className="mt-4 pt-4 border-t border-white/10 flex justify-center">
+                <div className="relative group">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onSkip();
+                    }}
+                    className="text-xs text-gray-400 hover:text-white transition-colors underline inline-flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Пропустить авторизацию
+                  </button>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1.5 bg-gray-800 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50" style={{
+                    fontFamily: 'Uralsib-Light, sans-serif',
+                    textRendering: 'geometricPrecision',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                    fontFeatureSettings: '"kern" 1',
+                    letterSpacing: '0.01em'
+                  }}>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                    ⚠️ Ваши результаты не сохранятся
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

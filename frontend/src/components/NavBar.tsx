@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import ProfileDropdown from './auth/ProfileDropdown';
 
 const DEBUG_VERSION = (() => {
   try {
@@ -17,7 +19,8 @@ const links = [
   { href: '#game', label: 'Игра' },
 ];
 
-export default function NavBar({ onStart }: { onStart: () => void }) {
+export default function NavBar({ onShowLoginModal }: { onShowLoginModal: () => void }) {
+  const { isAuthenticated, user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [canHover, setCanHover] = useState(false);
@@ -122,18 +125,34 @@ export default function NavBar({ onStart }: { onStart: () => void }) {
           {links.map(l => (
             <a key={l.href} href={l.href} onClick={(e)=>handleNavClick(e, l.href)} className="text-base text-gray-700 hover:text-primary transition-colors">{l.label}</a>
           ))}
-          <button onClick={onStart} aria-label="Войти" className="p-2 rounded-full bg-primary text-white hover:bg-secondary transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5Zm0 2c-3.866 0-7 3.134-7 7h2a5 5 0 0 1 10 0h2c0-3.866-3.134-7-7-7Z" fill="currentColor"/>
-            </svg>
-          </button>
+          {isAuthenticated && user ? (
+            <ProfileDropdown user={user} />
+          ) : (
+            <button
+              onClick={onShowLoginModal}
+              className="p-2 rounded-full bg-primary text-white hover:bg-secondary transition-colors"
+              aria-label="Войти"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5Zm0 2c-3.866 0-7 3.134-7 7h2a5 5 0 0 1 10 0h2c0-3.866-3.134-7-7-7Z" fill="currentColor"/>
+              </svg>
+            </button>
+          )}
         </nav>
         <div className="md:hidden flex items-center gap-2">
-          <button onClick={onStart} aria-label="Войти" className="p-2 rounded-full bg-primary text-white hover:bg-secondary transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5Zm0 2c-3.866 0-7 3.134-7 7h2a5 5 0 0 1 10 0h2c0-3.866-3.134-7-7-7Z" fill="currentColor"/>
-            </svg>
-          </button>
+          {isAuthenticated && user ? (
+            <ProfileDropdown user={user} />
+          ) : (
+            <button
+              onClick={onShowLoginModal}
+              className="p-2 rounded-full bg-primary text-white hover:bg-secondary transition-colors"
+              aria-label="Войти"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5Zm0 2c-3.866 0-7 3.134-7 7h2a5 5 0 0 1 10 0h2c0-3.866-3.134-7-7-7Z" fill="currentColor"/>
+              </svg>
+            </button>
+          )}
           <button
             ref={menuBtnRef}
             onClick={() => setOpen(v => !v)}
@@ -144,7 +163,6 @@ export default function NavBar({ onStart }: { onStart: () => void }) {
             className={`p-2 rounded-md outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 border-0 focus:bg-transparent transition-colors ${canHover ? 'hover:bg-black/5 active:bg-black/10' : 'hover:bg-transparent active:bg-transparent'}` }
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
-            {/* Hamburger / Close icon */}
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               {open ? (
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

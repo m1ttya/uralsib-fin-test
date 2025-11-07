@@ -1,28 +1,74 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: uralsib_user
+      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: uralsib_financial
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uralsib_user -d uralsib_financial"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uralsib_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=uralsib_user
+      - DB_PASSWORD=secure_password_123
+      - DB_NAME=uralsib_financial
+      - JWT_SECRET=dev-secret-change-me-please-very-long-and-secure
+      - ACCESS_TOKEN_EXPIRES_IN=1800
+      - REFRESH_TOKEN_EXPIRES_IN=604800
+      - PORT=4001
+      - CORS_ORIGIN=http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - uralsib_network
+    command: sh -c "npm ci && npm run dev"
+
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:4001/api
+    depends_on:
+      - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=http://localhost:3000/api
+    networks:
+      - uralsib_network
     command: npm run dev -- --host 0.0.0.0
 
-  # Backend сервис (когда будет готов)
-  backend:
-    image: node:18-alpine
-    working_dir: /app
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./backend:/app
-    command: sh -c "npm ci && npm run dev"
-    environment:
-      - NODE_ENV=development
+volumes:
+  postgres_data:
+
+networks:
+  uralsib_network:
+    driver: bridge
