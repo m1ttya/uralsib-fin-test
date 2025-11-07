@@ -516,7 +516,7 @@ function BackgroundParallax() {
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: -1,
+        zIndex: -100,
         // allow clicks to propagate for explosions
         pointerEvents: 'auto',
         background: 'radial-gradient(1200px 800px at 70% -10%, rgba(59,23,92,0.10), rgba(106,46,143,0.00))',

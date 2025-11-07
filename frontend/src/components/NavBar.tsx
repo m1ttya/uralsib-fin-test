@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileDropdown from './auth/ProfileDropdown';
 
@@ -21,6 +22,7 @@ const links = [
 
 export default function NavBar({ onShowLoginModal }: { onShowLoginModal: () => void }) {
   const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [canHover, setCanHover] = useState(false);
@@ -76,6 +78,13 @@ export default function NavBar({ onShowLoginModal }: { onShowLoginModal: () => v
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setOpen(false);
+
+    // If not on home page, navigate to home with hash
+    if (window.location.pathname !== '/') {
+      navigate(`/${href}`); // Keep the hash in the URL
+      return;
+    }
+
     // Update hash without default jump
     if (window.location.hash !== href) {
       window.history.replaceState(null, '', href);
@@ -118,7 +127,7 @@ export default function NavBar({ onShowLoginModal }: { onShowLoginModal: () => v
         }}
       > 
       <div className="flex items-center justify-between px-4 py-3" id="navbar-inner">
-        <a href="#home" className="flex items-center gap-2">
+        <a href="#home" onClick={(e) => handleNavClick(e, '#home')} className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}uralsib_logo.svg`} alt="Уралсиб" className="h-8 w-auto"/>
         </a>
         <nav className="hidden md:flex items-center gap-6">

@@ -80,27 +80,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Вход
   const login = async (login: string, password: string): Promise<void> => {
-    const response = await api.post('/users/login', { login, password });
+    try {
+      const response = await api.post('/users/login', { login, password });
 
-    const data = response.data;
+      const data = response.data;
 
-    if (!response.data.ok) {
-      throw new Error(data.error || 'Ошибка входа');
-    }
+      if (!data.ok) {
+        throw new Error(data.error || 'Неверный логин или пароль');
+      }
 
-    // Сохраняем access токен
-    if (data.accessToken) {
-      setToken(data.accessToken);
-    }
+      // Сохраняем access токен
+      if (data.accessToken) {
+        setToken(data.accessToken);
+      }
 
-    setUser(data.user);
-    setIsAuthenticated(true);
+      setUser(data.user);
+      setIsAuthenticated(true);
 
-    // Проверяем redirect URL
-    const redirectUrl = sessionStorage.getItem('redirectUrl');
-    if (redirectUrl) {
-      sessionStorage.removeItem('redirectUrl');
-      window.location.href = redirectUrl;
+      // Проверяем redirect URL
+      const redirectUrl = sessionStorage.getItem('redirectUrl');
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectUrl');
+        window.location.href = redirectUrl;
+      }
+    } catch (error: any) {
+      // Если это ошибка от axios (например, 401), пробуем получить данные из ответа
+      if (error.response) {
+        const errorData = error.response.data;
+        throw new Error(errorData.error || 'Неверный логин или пароль');
+      }
+      // Иначе перебрасываем как есть
+      throw error;
     }
   };
 

@@ -25,7 +25,7 @@ function LogoWithSecretClicks({ onClose }: { onClose?: () => void }) {
     setCount(next);
   };
   return (
-    <div className="flex flex-col items-center mb-6 sm:mb-6 pt-8 sm:pt-0 select-none">
+    <div className="flex flex-col items-center mb-6 select-none">
       <img
         onClick={onClick}
         src="./uralsib_logo_square_white.svg"
@@ -65,12 +65,52 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const validationTimeoutRef = useRef<number | null>(null);
+  const emailCheckTimeoutRef = useRef<number | null>(null);
+
+  // Проверка уникальности email при регистрации
+  const checkEmailUnique = async (email: string) => {
+    if (!email || mode !== 'register') return;
+
+    // Проверяем формат перед отправкой запроса
+    const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isEmailFormat) {
+      return; // Не проверяем уникальность для неполных email
+    }
+
+    try {
+      // В dev используем прокси, в проде - API_URL из env
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const url = apiUrl
+        ? `${apiUrl}/users/check-email?email=${encodeURIComponent(email)}`
+        : `/api/users/check-email?email=${encodeURIComponent(email)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.exists) {
+        setErrors(prev => ({ ...prev, email: 'Пользователь с таким email уже существует' }));
+      }
+      // Если email уникален, не удаляем ошибку (может быть ошибка формата)
+      // validateField сам управляет ошибками при onChange
+    } catch (error) {
+      console.error('Email check error:', error);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
       setMode('login'); // Сбрасываем режим на логин при каждом открытии
+      // Блокируем скролл страницы под модалом
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Восстанавливаем скролл
+      document.body.style.overflow = 'auto';
     }
+
+    // Очистка при размонтировании
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, [isOpen]);
 
   // Синхронизация shouldRender с isOpen
@@ -87,11 +127,14 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
     }
   }, [mode, shouldRender]);
 
-  // Очистка таймера при размонтировании
+  // Очистка таймеров при размонтировании
   useEffect(() => {
     return () => {
       if (validationTimeoutRef.current) {
         window.clearTimeout(validationTimeoutRef.current);
+      }
+      if (emailCheckTimeoutRef.current) {
+        window.clearTimeout(emailCheckTimeoutRef.current);
       }
     };
   }, []);
@@ -135,7 +178,9 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
 
     if (!formData.email) {
       newErrors.email = 'Обязательное поле';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    }
+    // В режиме регистрации проверяем формат email
+    else if (mode === 'register' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Некорректный email';
     }
 
@@ -152,6 +197,8 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
 
       if (!formData.name || formData.name.length < 2) {
         newErrors.name = 'Минимум 2 символа';
+      } else if (formData.name.length > 50) {
+        newErrors.name = 'Максимум 50 символов';
       }
     }
 
@@ -187,6 +234,8 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
       if (touchedFields.has('name')) {
         if (!formData.name || formData.name.length < 2) {
           newErrors.name = 'Минимум 2 символа';
+        } else if (formData.name.length > 50) {
+          newErrors.name = 'Максимум 50 символов';
         }
       }
 
@@ -221,7 +270,8 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
     if (mode === 'register') {
       // Все проверки - только в режиме регистрации
       if (fieldName === 'email') {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentValue)) {
+        // Проверяем формат сразу при вводе (если введено больше 1 символа)
+        if (currentValue.length > 1 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentValue)) {
           newErrors.email = 'Некорректный email';
         }
       } else if (fieldName === 'password') {
@@ -233,6 +283,8 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
       } else if (fieldName === 'name') {
         if (currentValue.length < 2) {
           newErrors.name = 'Минимум 2 символа';
+        } else if (currentValue.length > 50) {
+          newErrors.name = 'Максимум 50 символов';
         }
       } else if (fieldName === 'confirmPassword') {
         if (currentValue && formData.password && formData.password !== currentValue) {
@@ -264,14 +316,35 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
       return;
     }
 
-    setIsLoading(true);
+    // Проверка уникальности email при регистрации перед отправкой
+    if (mode === 'register' && formData.email) {
+      try {
+        // В dev используем прокси, в проде - API_URL из env
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const url = apiUrl
+          ? `${apiUrl}/users/check-email?email=${encodeURIComponent(formData.email)}`
+          : `/api/users/check-email?email=${encodeURIComponent(formData.email)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.exists) {
+          setErrors(prev => ({ ...prev, email: 'Пользователь с таким email уже существует' }));
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Email check error:', error);
+        // При ошибке проверки продолжаем отправку формы
+      }
+    }
 
     try {
       if (mode === 'login') {
         await login(formData.email, formData.password);
         setMessage('Вход выполнен успешно!');
         if (fromStartTest) {
-          // Если пользователь пришел с кнопки "начать тест", закрываем модал и переходим к тестам
+          // Если пользователь пришел с кнопки "начать тест", очищаем redirectUrl и переходим к тестам
+          sessionStorage.removeItem('redirectUrl');
           setTimeout(() => {
             handleClose();
             setTimeout(() => {
@@ -290,7 +363,8 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
         });
         setMessage('Регистрация успешна!');
         if (fromStartTest) {
-          // Если пользователь пришел с кнопки "начать тест", закрываем модал и переходим к тестам
+          // Если пользователь пришел с кнопки "начать тест", очищаем redirectUrl и переходим к тестам
+          sessionStorage.removeItem('redirectUrl');
           setTimeout(() => {
             handleClose();
             setTimeout(() => {
@@ -317,7 +391,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-0 sm:p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-0"
           onClick={handleClose}
         >
           <motion.div
@@ -325,7 +399,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-screen h-[85dvh] sm:h-auto sm:w-full sm:max-w-[420px] rounded-none sm:rounded-3xl p-5 sm:p-7 relative"
+            className="h-screen sm:h-auto w-full sm:w-auto sm:max-w-[420px] sm:mx-4 rounded-none sm:rounded-3xl p-5 flex flex-col relative"
             style={{ backgroundColor: '#252030' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -352,7 +426,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
 
             {message && (
               <div className={`mb-4 p-3 rounded-lg text-sm ${
-                message.includes('успех')
+                message.includes('успешн') || message.includes('Вход') || message.includes('Регистрация')
                   ? 'bg-green-600 text-white'
                   : 'bg-red-600 text-white'
               }`}>
@@ -370,11 +444,26 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
                   onChange={(e) => {
                     setFormData({ ...formData, email: e.target.value });
                     setTouchedFields(prev => new Set(prev).add('email'));
+                    setMessage(''); // очищаем сообщение при вводе
                     validateField('email', e.target.value);
+
+                    // Проверка уникальности email при регистрации (с debounce)
+                    if (mode === 'register') {
+                      if (emailCheckTimeoutRef.current) {
+                        clearTimeout(emailCheckTimeoutRef.current);
+                      }
+                      emailCheckTimeoutRef.current = window.setTimeout(() => {
+                        checkEmailUnique(e.target.value);
+                      }, 500);
+                    }
                   }}
                   onBlur={() => {
                     setTouchedFields(prev => new Set(prev).add('email'));
-                    validateField('email');
+                    // В режиме регистрации проверяем формат и уникальность email
+                    if (mode === 'register' && formData.email) {
+                      validateField('email'); // Показываем ошибку формата если есть
+                      checkEmailUnique(formData.email); // Проверяем уникальность (только для полных email)
+                    }
                   }}
                   autoComplete={mode === 'login' ? 'username' : 'email'}
                   className="w-full px-4 py-3 rounded-2xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -392,6 +481,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
                   <input
                     type="text"
                     placeholder="Имя"
+                    maxLength={50}
                     value={formData.name}
                     onChange={(e) => {
                       setFormData({ ...formData, name: e.target.value });
@@ -419,6 +509,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
                   onChange={(e) => {
                     setFormData({ ...formData, password: e.target.value });
                     setTouchedFields(prev => new Set(prev).add('password'));
+                    setMessage(''); // очищаем сообщение при вводе
                     validateField('password', e.target.value);
                     // Если изменяем пароль, проверяем и подтверждение
                     if (touchedFields.has('confirmPassword')) {

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import NavBar from '../components/NavBar';
-import BackgroundParallax from '../components/BackgroundParallaxNew';
 
 interface TestResult {
   result_id: number;
@@ -47,6 +46,9 @@ export default function PersonalCabinet() {
   const [activeTab, setActiveTab] = useState<'tests' | 'courses' | 'activity'>('tests');
 
   useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
     const fetchCabinetData = async () => {
       try {
         setIsLoading(true);
@@ -78,8 +80,7 @@ export default function PersonalCabinet() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full relative" style={{ zIndex: 1 }}>
-        <BackgroundParallax />
+      <div className="min-h-screen w-full relative">
         <NavBar onShowLoginModal={() => {}} />
         <div className="min-h-screen flex items-center justify-center pt-32">
           <div className="text-center bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20">
@@ -93,8 +94,7 @@ export default function PersonalCabinet() {
 
   if (!cabinetData) {
     return (
-      <div className="min-h-screen w-full relative" style={{ zIndex: 1 }}>
-        <BackgroundParallax />
+      <div className="min-h-screen w-full relative">
         <NavBar onShowLoginModal={() => {}} />
         <div className="min-h-screen flex items-center justify-center pt-32">
           <div className="text-center bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20">
@@ -106,10 +106,14 @@ export default function PersonalCabinet() {
   }
 
   return (
-    <div className="min-h-screen w-full relative" style={{ zIndex: 1 }}>
-      <BackgroundParallax />
+    <div className="min-h-screen w-full relative">
+      <style>{`
+        .nav-scroll-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <NavBar onShowLoginModal={() => {}} />
-      <div className="min-h-screen pt-32 pb-20">
+      <div className="min-h-screen pt-12 sm:pt-16 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -117,13 +121,17 @@ export default function PersonalCabinet() {
             transition={{ duration: 0.5 }}
             style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}
           >
-            <div className="mb-8">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
-                Личный кабинет
-              </h1>
-              <p className="text-white/90 text-lg">
-                Здравствуйте, {cabinetData.user.name}!
-              </p>
+            <div className="mb-6 sm:mb-8">
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl border border-white/20">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-primary mb-2 sm:mb-4" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>
+                  Личный кабинет
+                </h1>
+                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-primary/10">
+                  <p className="text-gray-700 text-sm sm:text-lg" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
+                    Здравствуйте, <span className="font-bold text-primary">{cabinetData.user.name}</span>!
+                  </p>
+                </div>
+              </div>
             </div>
 
           {/* Статистика */}
@@ -141,7 +149,7 @@ export default function PersonalCabinet() {
                   </svg>
                 </div>
                 <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Всего тестов</p>
+                  <p className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Тестов пройдено</p>
                   <p className="text-3xl font-bold text-primary mt-1" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>{cabinetData.stats.total_tests}</p>
                 </div>
               </div>
@@ -181,7 +189,7 @@ export default function PersonalCabinet() {
                   </svg>
                 </div>
                 <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Курсов подписано</p>
+                  <p className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Курсов добавлено</p>
                   <p className="text-3xl font-bold text-primary mt-1" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>{cabinetData.stats.total_courses}</p>
                 </div>
               </div>
@@ -200,7 +208,7 @@ export default function PersonalCabinet() {
                   </svg>
                 </div>
                 <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Завершено курсов</p>
+                  <p className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Курсов завершено</p>
                   <p className="text-3xl font-bold text-primary mt-1" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>{cabinetData.stats.completed_courses}</p>
                 </div>
               </div>
@@ -210,10 +218,17 @@ export default function PersonalCabinet() {
           {/* Вкладки */}
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
             <div className="border-b border-gray-200/50">
-              <nav className="flex space-x-2 px-6">
+              <nav
+                className="nav-scroll-hide flex space-x-2 overflow-x-auto px-4 sm:px-8 pt-6 pb-2"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
                 <button
                   onClick={() => setActiveTab('tests')}
-                  className={`py-5 px-4 font-medium text-sm rounded-2xl transition-all duration-300 ${
+                  className={`py-4 px-4 sm:py-4 sm:px-5 font-medium text-xs sm:text-sm rounded-3xl transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'tests'
                       ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
                       : 'text-gray-600 hover:text-primary hover:bg-primary/5'
@@ -224,7 +239,7 @@ export default function PersonalCabinet() {
                 </button>
                 <button
                   onClick={() => setActiveTab('courses')}
-                  className={`py-5 px-4 font-medium text-sm rounded-2xl transition-all duration-300 ${
+                  className={`py-4 px-4 sm:py-4 sm:px-5 font-medium text-xs sm:text-sm rounded-3xl transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'courses'
                       ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
                       : 'text-gray-600 hover:text-primary hover:bg-primary/5'
@@ -235,7 +250,7 @@ export default function PersonalCabinet() {
                 </button>
                 <button
                   onClick={() => setActiveTab('activity')}
-                  className={`py-5 px-4 font-medium text-sm rounded-2xl transition-all duration-300 ${
+                  className={`py-4 px-4 sm:py-4 sm:px-5 font-medium text-xs sm:text-sm rounded-3xl transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'activity'
                       ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
                       : 'text-gray-600 hover:text-primary hover:bg-primary/5'
@@ -347,42 +362,42 @@ export default function PersonalCabinet() {
                       <p className="text-gray-500 text-lg" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>Пока нет активности</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-x-hidden">
                       {cabinetData.test_results.map((test) => (
-                        <div key={`test-${test.result_id}`} className="flex items-start space-x-4 p-5 bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:border-primary/20">
-                          <div className="p-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl border border-primary/10">
-                            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div key={`test-${test.result_id}`} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-5 bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:border-primary/20 overflow-hidden">
+                          <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl border border-primary/10 flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                           </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 mb-1" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base break-words" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>
                               Прошли тест: {test.test_title || test.test_id}
                             </p>
-                            <p className="text-sm text-gray-600 mb-2" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2 break-words" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
                               Результат: <span className="font-semibold text-primary">{test.percentage.toFixed(1)}%</span> ({test.correct_answers}/{test.total_questions} вопросов)
                             </p>
-                            <p className="text-xs text-gray-500" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
+                            <p className="text-xs text-gray-500 break-words" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
                               {test.completed_at ? new Date(test.completed_at).toLocaleString('ru-RU') : ''}
                             </p>
                           </div>
                         </div>
                       ))}
                       {cabinetData.courses.map((course) => (
-                        <div key={`course-${course.course_id}`} className="flex items-start space-x-4 p-5 bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:border-primary/20">
-                          <div className="p-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl border border-primary/10">
-                            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div key={`course-${course.course_id}`} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-5 bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:border-primary/20 overflow-hidden">
+                          <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl border border-primary/10 flex-shrink-0">
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
                           </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 mb-1" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base break-words" style={{ fontFamily: 'Uralsib-Bold, sans-serif' }}>
                               Записались на курс: {course.course_name}
                             </p>
-                            <p className="text-sm text-gray-600 mb-2" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2 break-words" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
                               Прогресс: <span className="font-semibold text-primary">{course.progress_percentage.toFixed(0)}%</span>
                             </p>
-                            <p className="text-xs text-gray-500" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
+                            <p className="text-xs text-gray-500 break-words" style={{ fontFamily: 'Uralsib-Regular, sans-serif' }}>
                               {new Date(course.enrolled_at).toLocaleString('ru-RU')}
                             </p>
                           </div>
@@ -397,6 +412,6 @@ export default function PersonalCabinet() {
         </motion.div>
       </div>
     </div>
-  </div>
+    </div>
   );
 }

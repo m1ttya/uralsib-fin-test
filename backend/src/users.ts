@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { createHash } from 'crypto';
 import { query } from './db';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -184,6 +185,32 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// GET /api/users/check-email
+router.get('/check-email', async (req, res) => {
+  try {
+    const email = req.query.email as string;
+
+    if (!email) {
+      return res.status(400).json({ ok: false, error: 'Email не указан' });
+    }
+
+    // Проверка уникальности email
+    const result = await query(
+      'SELECT user_id FROM users WHERE email = ?',
+      [email]
+    );
+
+    return res.json({
+      ok: true,
+      exists: result.rows.length > 0
+    });
+
+  } catch (error) {
+    console.error('Check email error:', error);
+    return res.status(500).json({ ok: false, error: 'Ошибка сервера' });
+  }
+});
+
 // POST /api/users/login
 router.post('/login', async (req, res) => {
   try {
@@ -328,11 +355,10 @@ router.post('/logout', async (req, res) => {
 
     if (refreshToken) {
       // Отзыв токена
+      const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
       await query(
-        'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = ANY(' +
-        'SELECT token_hash FROM refresh_tokens WHERE expires_at > NOW() AND revoked_at IS NULL' +
-        ')',
-        []
+        'UPDATE refresh_tokens SET revoked_at = datetime("now") WHERE token_hash = ? AND revoked_at IS NULL',
+        [tokenHash]
       );
     }
 
@@ -470,6 +496,88 @@ router.get('/cabinet', async (req, res) => {
 
   } catch (error) {
     console.error('Get cabinet error:', error);
+    return res.status(500).json({ ok: false, error: 'Ошибка сервера' });
+  }
+});
+
+// Middleware для проверки суперюзера
+const SUPER_USER_PASSWORD = 'rootroot';
+
+function requireSuperUser(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ ok: false, error: 'Неавторизован' });
+  }
+
+  const token = authHeader.substring(7);
+  if (token !== SUPER_USER_PASSWORD) {
+    return res.status(403).json({ ok: false, error: 'Доступ запрещен' });
+  }
+
+  next();
+}
+
+// POST /api/users/admin/verify
+router.post('/admin/verify', (req, res) => {
+  const { password } = req.body || {};
+
+  if (password === SUPER_USER_PASSWORD) {
+    return res.json({ ok: true, valid: true });
+  }
+
+  return res.status(403).json({ ok: false, error: 'Неверный пароль' });
+});
+
+// GET /api/users/admin/list
+router.get('/admin/list', requireSuperUser, async (req, res) => {
+  try {
+    const users = await query(`
+      SELECT user_id, email, name, username, created_at
+      FROM users
+      ORDER BY created_at DESC
+    `);
+
+    return res.json({
+      ok: true,
+      users: users.rows
+    });
+
+  } catch (error) {
+    console.error('Get users list error:', error);
+    return res.status(500).json({ ok: false, error: 'Ошибка сервера' });
+  }
+});
+
+// DELETE /api/users/admin/delete/:id
+router.delete('/admin/delete/:id', requireSuperUser, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'Неверный ID пользователя' });
+    }
+
+    // Проверяем, что пользователь существует
+    const check = await query('SELECT user_id FROM users WHERE user_id = ?', [userId]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ ok: false, error: 'Пользователь не найден' });
+    }
+
+    // Удаляем связанные данные
+    await query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
+    await query('DELETE FROM test_results WHERE user_id = ?', [userId]);
+    await query('DELETE FROM user_courses WHERE user_id = ?', [userId]);
+
+    // Удаляем пользователя
+    await query('DELETE FROM users WHERE user_id = ?', [userId]);
+
+    return res.json({
+      ok: true,
+      message: 'Пользователь удален'
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error);
     return res.status(500).json({ ok: false, error: 'Ошибка сервера' });
   }
 });

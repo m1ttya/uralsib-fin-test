@@ -58,31 +58,26 @@ export default function ProfileDropdown({ user }: ProfileDropdownProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 rounded-lg px-4 py-2 hover:bg-white/10 transition-colors"
+        className="flex items-center rounded-lg hover:bg-white/10 transition-colors"
         aria-label="Открыть меню профиля"
+        title={getDisplayName()}
+        style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
       >
         {user.avatar_url ? (
-          <img
-            src={user.avatar_url}
-            alt="Аватар"
-            className="w-8 h-8 rounded-full object-cover"
-          />
+          <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+            <img
+              src={user.avatar_url}
+              alt="Аватар"
+              className="w-[18px] h-[18px] rounded-full object-cover"
+            />
+          </div>
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">
+          <div className="p-2 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+            <span className="text-white font-semibold text-sm w-[18px] h-[18px] flex items-center justify-center">
               {getDisplayName().charAt(0).toUpperCase()}
             </span>
           </div>
         )}
-        <span className="text-white font-medium">{getDisplayName()}</span>
-        <svg
-          className={`w-4 h-4 text-white transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
       </button>
 
       <AnimatePresence>
@@ -92,15 +87,15 @@ export default function ProfileDropdown({ user }: ProfileDropdownProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg z-50 overflow-hidden"
+            className="absolute right-0 mr-2 mt-2 w-56 sm:w-64 md:w-72 rounded-lg shadow-lg z-50 overflow-hidden"
             style={{
               backgroundColor: '#3B175C',
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}
           >
             <div className="p-3 border-b border-white/10">
-              <p className="text-white font-semibold">{getDisplayName()}</p>
-              <p className="text-white/60 text-sm">
+              <p className="text-white font-semibold truncate" title={getDisplayName()}>{getDisplayName()}</p>
+              <p className="text-white/60 text-sm truncate" title={user.email || user.username || 'Пользователь'}>
                 {user.email || user.username || 'Пользователь'}
               </p>
             </div>

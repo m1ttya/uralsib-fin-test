@@ -1486,9 +1486,205 @@ function Overview() {
   );
 }
 
+function UsersManager() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/users/admin/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (data.valid) {
+        setIsAuthorized(true);
+        await loadUsers();
+      } else {
+        setError('Неверный пароль');
+      }
+    } catch (err) {
+      setError('Ошибка авторизации');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const response = await fetch('/api/users/admin/list', {
+        headers: {
+          'Authorization': `Bearer ${password}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users);
+      } else {
+        setError('Не удалось загрузить список пользователей');
+      }
+    } catch (err) {
+      setError('Ошибка загрузки');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleDelete = async (userId: number) => {
+    if (!confirm('Удалить этого пользователя? Это действие нельзя отменить.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/users/admin/delete/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setUsers(users.filter(u => u.user_id !== userId));
+        alert('Пользователь удален');
+      } else {
+        const data = await response.json();
+        alert('Ошибка: ' + (data.error || 'Не удалось удалить'));
+      }
+    } catch (err) {
+      alert('Ошибка удаления');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthorized(false);
+    setPassword('');
+    setUsers([]);
+    setError('');
+  };
+
+  if (!isAuthorized) {
+    return (
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold text-primary mb-2">Управление пользователями</h2>
+            <p className="text-sm text-gray-600">Для доступа введите пароль суперюзера</p>
+          </div>
+
+          <form onSubmit={handleVerify} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Пароль суперюзера"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                required
+              />
+              {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !password}
+              className="w-full py-3 bg-primary text-white rounded-lg hover:bg-secondary disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Проверка...' : 'Войти'}
+            </button>
+          </form>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-semibold text-primary mb-1">Управление пользователями</h2>
+          <p className="text-sm text-gray-600">Всего пользователей: {users.length}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-gray-600 hover:text-primary inline-flex items-center gap-2"
+        >
+          <LogoutIcon className="text-gray-600" />
+          Выйти
+        </button>
+      </div>
+
+      {loadingUsers ? (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Имя</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Логин</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Создан</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.user_id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-3 px-4 text-gray-600">{user.user_id}</td>
+                  <td className="py-3 px-4 text-gray-900">{user.email || '-'}</td>
+                  <td className="py-3 px-4 text-gray-900">{user.name || '-'}</td>
+                  <td className="py-3 px-4 text-gray-600">{user.username || '-'}</td>
+                  <td className="py-3 px-4 text-gray-600">
+                    {new Date(user.created_at).toLocaleDateString('ru-RU')}
+                  </td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => handleDelete(user.user_id)}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {users.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              Пользователей пока нет
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AdminPanel() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<'overview' | 'tests' | 'products' | 'articles' | 'courses'>('overview');
+  const [tab, setTab] = useState<'overview' | 'tests' | 'products' | 'articles' | 'courses' | 'users'>('overview');
 
   useEffect(() => {
     // Ensure we are on the admin route
@@ -1531,6 +1727,8 @@ export default function AdminPanel() {
           <TabButton active={tab === 'products'} onClick={() => setTab('products')}>Продукты</TabButton>
           <TabButton active={tab === 'articles'} onClick={() => setTab('articles')}>Статьи</TabButton>
           <TabButton active={tab === 'courses'} onClick={() => setTab('courses')}>Курсы</TabButton>
+          <div className="w-px h-6 bg-gray-300 mx-1"></div>
+          <TabButton active={tab === 'users'} onClick={() => setTab('users')}>Пользователи</TabButton>
         </div>
 
         {tab === 'overview' && (
@@ -1561,6 +1759,10 @@ export default function AdminPanel() {
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <CoursesManager />
           </section>
+        )}
+
+        {tab === 'users' && (
+          <UsersManager />
         )}
       </main>
     </div>

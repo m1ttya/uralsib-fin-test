@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+// В разработке используем относительные пути (прокси в Vite)
+// В проде используем API_URL из переменных окружения
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL || '/api', // добавляем /api для dev с прокси
   withCredentials: true, // для refresh token cookie
   headers: {
     'Content-Type': 'application/json',
