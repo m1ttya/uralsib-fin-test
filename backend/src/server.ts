@@ -531,7 +531,7 @@ if (process.env.NODE_ENV !== 'production') {
     });
   });
 }
-const port = process.env.PORT ? Number(process.env.PORT) : 4001;
+const port = 4001; // Always use 4001 for Railway
 
 // Vercel handler
 const handler = app;
