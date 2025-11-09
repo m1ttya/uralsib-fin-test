@@ -18,6 +18,7 @@ interface ArticleWithContent extends Article {
 }
 
 export default function ArticlesManager() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +29,8 @@ export default function ArticlesManager() {
   // Products for tagging
   const [productsByTopic, setProductsByTopic] = useState<Record<string, ProductRef[]>>({});
   useEffect(() => {
-    fetch('/api/admin/products_by_topic', { credentials: 'include' })
+    const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+    fetch(`${baseUrl}/api/admin/products_by_topic`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => setProductsByTopic(data || {}))
       .catch(() => setProductsByTopic({}));
@@ -38,7 +40,8 @@ export default function ArticlesManager() {
   const loadArticles = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/articles/admin/list', {
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const response = await fetch(`${baseUrl}/api/articles/admin/list`, {
         credentials: 'include'
       });
 
@@ -62,7 +65,8 @@ export default function ArticlesManager() {
   // Load article for editing
   const handleEdit = async (id: string) => {
     try {
-      const response = await fetch(`/api/articles/admin/${id}`, {
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const response = await fetch(`${baseUrl}/api/articles/admin/${id}`, {
         credentials: 'include'
       });
 
@@ -86,9 +90,10 @@ export default function ArticlesManager() {
     if (!editingArticle) return;
 
     try {
-      const url = editingArticle.id === 'new' 
-        ? '/api/articles/admin/create'
-        : `/api/articles/admin/${editingArticle.id}`;
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const url = editingArticle.id === 'new'
+        ? `${baseUrl}/api/articles/admin/create`
+        : `${baseUrl}/api/articles/admin/${editingArticle.id}`;
       
       const method = editingArticle.id === 'new' ? 'POST' : 'PUT';
 
@@ -121,7 +126,8 @@ export default function ArticlesManager() {
     if (!confirm('Вы уверены, что хотите удалить эту статью?')) return;
 
     try {
-      const response = await fetch(`/api/articles/admin/${id}`, {
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const response = await fetch(`${baseUrl}/api/articles/admin/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -147,7 +153,8 @@ export default function ArticlesManager() {
     ));
 
     try {
-      const response = await fetch(`/api/articles/admin/${article.id}`, {
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const response = await fetch(`${baseUrl}/api/articles/admin/${article.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -182,7 +189,8 @@ export default function ArticlesManager() {
 
     try {
       setUploadingFile(true);
-      const response = await fetch('/api/articles/admin/upload', {
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const response = await fetch(`${baseUrl}/api/articles/admin/upload`, {
         method: 'POST',
         credentials: 'include',
         body: formData

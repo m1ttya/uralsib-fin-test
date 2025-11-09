@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AdminGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [state, setState] = useState<'checking' | 'unauth' | 'authed'>('checking');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +14,8 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
   const checkMe = async () => {
     try {
       setError(null);
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const res = await fetch(`${baseUrl}/api/auth/me`, { credentials: 'include' });
       if (res.ok) {
         setState('authed');
       } else {
@@ -44,7 +46,8 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
     e.preventDefault();
     try {
       setError(null);
-      const res = await fetch('/api/auth/login', {
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const res = await fetch(`${baseUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
