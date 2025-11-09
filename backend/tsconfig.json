@@ -5,5 +5,14 @@
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "**/*.tsx", "**/*.jsx"]
+  "exclude": [
+    "node_modules",
+    "../frontend",
+    "../../frontend",
+    "../**/*.tsx",
+    "../**/*.jsx",
+    "../**/vite.config.ts",
+    "../**/tailwind.config.*",
+    "../**/postcss.config.js"
+  ]
 }

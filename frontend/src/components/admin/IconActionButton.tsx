@@ -12,7 +12,7 @@ export function IconActionButton({
   className = '',
 }: {
   title: string;
-  onClick?: () => void;
+  onClick?: () => void | Promise<void>;
   disabled?: boolean;
   children: React.ReactNode;
   variant?: Variant;

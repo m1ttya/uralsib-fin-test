@@ -564,8 +564,7 @@ function ArticlesManagerOld() {
                       />
                       {/* Сохранение теперь по blur, кнопку скрываем */}
                       <IconActionButton title="Сохранить название" iconOnly disabled className="hidden"
-                      onClick={async (ev)=>{
-                        (ev as any)?.stopPropagation?.();
+                      onClick={async ()=>{
                         try {
                           setSavingTitle(g.base);
                           const payload = { titles: { ...titles, [g.base]: titles[g.base] ?? g.base } };
@@ -792,18 +791,18 @@ function TestsManager() {
           <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg">
             Исправьте ошибки перед сохранением:
             <ul className="list-disc pl-5 mt-1 space-y-0.5">
-              {errs.map((e,i)=>(<li key={i}>{e}</li>))}
+              {errs.map((e: string, i: number)=>(<li key={i}>{e}</li>))}
             </ul>
           </div>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <div className="text-xs text-gray-500 mb-1">ID</div>
-            <input value={json.id||''} onChange={e=>setJson((p:any)=>({...p, id:e.target.value}))} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+            <input value={json.id||''} onChange={(e: any)=>setJson((p:any)=>({...p, id:e.target.value}))} onMouseDown={(e: any)=>e.stopPropagation()} onClick={(e: any)=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
           </label>
           <label className="block sm:col-span-1">
             <div className="text-xs text-gray-500 mb-1">Заголовок (title)</div>
-            <input value={json.title||''} onChange={e=>setJson((p:any)=>({...p, title:e.target.value}))} onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
+            <input value={json.title||''} onChange={(e: any)=>setJson((p:any)=>({...p, title:e.target.value}))} onMouseDown={(e: any)=>e.stopPropagation()} onClick={(e: any)=>e.stopPropagation()} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" />
           </label>
         </div>
         <div className="text-sm font-semibold text-gray-800 mt-2">Вопросы</div>
@@ -849,11 +848,11 @@ function TestsManager() {
                   {Object.keys((props.productsByTopicForTests||{})).length === 0 ? (
                     <div className="text-xs text-gray-500">Продукты ещё не настроены</div>
                   ) : (
-                    Object.entries(props.productsByTopicForTests||{}).map(([cat, items]) => (
+                    Object.entries(props.productsByTopicForTests||{}).map(([cat, items]: [string, any]) => (
                       <div key={cat} className="border rounded p-2">
                         <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">{cat}</div>
                         <div className="flex flex-wrap gap-2">
-                          {items.map((it) => {
+                          {items.map((it: any) => {
                             const selected = Array.isArray(q.tags) && q.tags.some((t:any)=>t.linkUrl===it.linkUrl);
                             return (
                               <button
@@ -1055,8 +1054,7 @@ function TestsManager() {
                     title="Удалить тест"
                     variant="danger"
                     iconOnly
-                    onClick={async (e) => {
-                      e?.stopPropagation();
+                    onClick={async () => {
                       if (!confirm(`Удалить тест "${f}"?`)) return;
                       try {
                         const res = await fetch(`/api/tests/admin/delete?path=${encodeURIComponent(`${base}${name}/${f}`)}`, {
