@@ -25,7 +25,7 @@ export default function TestPlayer({ test, onRestart }: Props) {
     setShowFeedback(true);
   };
 
-  const handleNext = () => {
+  const _handleNext = () => {
     if (selectedOption !== null) {
       const newAnswers = [...answers];
       newAnswers[currentQuestionIndex] = selectedOption;
@@ -96,8 +96,6 @@ export default function TestPlayer({ test, onRestart }: Props) {
             onOptionSelect={handleOptionSelect}
             showFeedback={showFeedback}
             correctIndex={currentQuestion.correctIndex}
-            onNext={handleNext}
-            canProceed={selectedOption !== null}
             />
         </AnimatePresence>
         </div>

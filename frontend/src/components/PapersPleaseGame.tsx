@@ -113,7 +113,6 @@ const PapersPleaseGame: React.FC = () => {
   });
 
   const [feedback, setFeedback] = useState<{message: string, points: number, type: 'success' | 'error' } | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [savedScrollPosition, setSavedScrollPosition] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 475);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -147,7 +146,6 @@ const PapersPleaseGame: React.FC = () => {
   const startGame = () => {
     // Сохраняем текущую позицию скролла
     setSavedScrollPosition(window.scrollY);
-    setIsTransitioning(true);
 
     // Плавное расширение - задержка для анимации (только на мобильных)
     const delay = isMobile ? 300 : 0;
@@ -172,14 +170,12 @@ const PapersPleaseGame: React.FC = () => {
       // Показываем экран загрузки на 3 секунды
       setTimeout(() => {
         startNewDay();
-        setIsTransitioning(false);
       }, 3000);
     }, delay);
   };
 
   // Выход из игры
   const exitGame = () => {
-    setIsTransitioning(true);
     // Небольшая задержка для плавного выхода
     setTimeout(() => {
       setGameState({
@@ -204,7 +200,6 @@ const PapersPleaseGame: React.FC = () => {
           window.scrollTo({ top: savedScrollPosition, behavior: 'instant' });
         });
       });
-      setIsTransitioning(false);
     }, 200);
   };
 
@@ -715,35 +710,6 @@ const PapersPleaseGame: React.FC = () => {
               image-rendering: pixelated;
             }
           `}</style>
-          {/* Кнопка выхода */}
-          <button
-            onClick={exitGame}
-            style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              padding: '12px 20px',
-              background: '#a03c3c',
-              border: '3px solid #000',
-              color: '#fff',
-              fontSize: '14px',
-              fontFamily: '"Press Start 2P", monospace',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              imageRendering: 'pixelated',
-              zIndex: 10000,
-              boxShadow: 'inset -3px -3px 0 #7a2d2d, inset 3px 3px 0 #c55555, 3px 3px 0 #000',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#b44444';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = '#a03c3c';
-            }}
-          >
-            ✕ ВЫХОД
-          </button>
-          <>
             {/* Шапка */}
             <div className="game-header">
               <style>{`
@@ -754,13 +720,13 @@ const PapersPleaseGame: React.FC = () => {
                   display: flex;
                   justify-content: space-between;
                   align-items: center;
-                  padding-top: 60px;
+                  padding-top: 24px;
                 }
 
                 @media (max-width: 475px) {
                   .game-header {
                     padding: 12px;
-                    padding-top: 60px;
+                    padding-top: 16px;
                     flex-direction: column;
                     gap: 8px;
                   }
@@ -769,7 +735,7 @@ const PapersPleaseGame: React.FC = () => {
                 @media (max-width: 640px) and (min-width: 476px) {
                   .game-header {
                     padding: 16px;
-                    padding-top: 60px;
+                    padding-top: 20px;
                   }
                 }
               `}</style>
@@ -825,6 +791,48 @@ const PapersPleaseGame: React.FC = () => {
                 }}>
                   REP: {gameState.reputation}
                 </div>
+                {/* Кнопка выхода */}
+                <button
+                  onClick={exitGame}
+                  className="exit-button"
+                >
+                  ✕
+                </button>
+                <style>{`
+                  .exit-button {
+                    padding: 10px 16px;
+                    background: #a03c3c;
+                    border: 3px solid #000;
+                    color: #fff;
+                    font-size: 14px;
+                    font-family: "Press Start 2P", monospace;
+                    font-weight: bold;
+                    cursor: pointer;
+                    image-rendering: pixelated;
+                    box-shadow: inset -3px -3px 0 #7a2d2d, inset 3px 3px 0 #c55555, 3px 3px 0 #000;
+                    transition: background 0.1s ease;
+                  }
+
+                  .exit-button:hover {
+                    background: #b44444;
+                  }
+
+                  @media (max-width: 475px) {
+                    .exit-button {
+                      padding: 12px;
+                      font-size: 16px;
+                      aspect-ratio: 1;
+                      width: 100%;
+                      max-width: 56px;
+                    }
+                  }
+
+                  @media (max-width: 640px) and (min-width: 476px) {
+                    .exit-button {
+                      padding: 10px 16px;
+                    }
+                  }
+                `}</style>
               </div>
             </div>
 
@@ -1154,7 +1162,6 @@ const PapersPleaseGame: React.FC = () => {
                 }} />
               </div>
             </div>
-          </>
         </div>
       )}
 

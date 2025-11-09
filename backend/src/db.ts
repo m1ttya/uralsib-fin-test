@@ -25,8 +25,9 @@ const pool = new Pool({
 // Initialize SQLite database
 async function initSQLite() {
   if (!sqliteDb) {
+    const dbPath = process.env.DATABASE_PATH || './uralsib_financial.db';
     sqliteDb = await open({
-      filename: './uralsib_financial.db',
+      filename: dbPath,
       driver: sqlite3.Database
     });
 

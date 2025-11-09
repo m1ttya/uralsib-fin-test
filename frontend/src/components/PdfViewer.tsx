@@ -1,5 +1,3 @@
-import React from 'react';
-
 // Use Mozilla PDF.js web viewer via CDN inside iframe (fast, smooth scrolling, no bundler config)
 export default function PdfViewer({ url, className = '' }: { url: string; className?: string }) {
   const fileUrl = typeof window !== 'undefined' ? new URL(url, window.location.origin).href : url;

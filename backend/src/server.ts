@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import { testsRouter } from './tests/router';
 import articlesRouter from './articles/router';
 import { attachAuth, ensureAdmin } from './auth';
@@ -13,10 +14,30 @@ import * as cheerio from 'cheerio';
 
 
 const app = express();
-     
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 attachAuth(app);
+
+// Middleware to set x-authenticated header based on JWT token
+// This is used by the tests router to check if user is authenticated
+app.use((req, _res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded) {
+        req.headers['x-authenticated'] = 'true';
+      }
+    } catch (e) {
+      // Token is invalid, don't set the header
+    }
+  }
+  next();
+});
    
 // Health check endpoint
 app.get('/api/health', (_req, res) => {

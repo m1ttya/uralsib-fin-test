@@ -15,6 +15,27 @@ type Props = {
 };
 
 export default function ResultsView({ test, answers, correctByQ, onRestart, onToggleArticle }: Props) {
+  // CSS для плавного появления рекомендаций без мерцания скроллбара
+  const recommendationsStyles = `
+    .recommendations-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    }
+    .recommendations-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .recommendations-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .recommendations-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+    .recommendations-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  `;
+
   // Считаем правильные ответы, сравнивая выбранный индекс (перетасованный)
   // с правильным индексом (перетасованный) из correctByQ
   const correctCount: number = answers.reduce((acc: number, ans: number | null, idx: number) => {
@@ -45,20 +66,6 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
     }
   };
 
-  // Определяем смайлик в зависимости от результата
-  const getEmoji = (score: number) => {
-    if (score >= 80) return '🎉';
-    if (score >= 60) return '😊';
-    if (score >= 40) return '😐';
-    return '😔';
-  };
-
-  const getMessage = (score: number) => {
-    if (score >= 80) return 'Отлично!';
-    if (score >= 60) return 'Хорошо!';
-    if (score >= 40) return 'Неплохо!';
-    return 'Попробуйте еще раз!';
-  };
 
   type Product = { title: string; linkUrl: string; linkText?: string };
   const [byTopic, setByTopic] = useState<Record<string, Product[]>>({});
@@ -292,9 +299,9 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
             <button
               type="button"
               onClick={() => setArticleContent(null)}
-              className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90"
+              className="px-4 py-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors font-medium"
             >
-              Назад к рекомендациям
+              Назад
             </button>
           </div>
         </div>
@@ -311,13 +318,15 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="relative flex flex-col h-full overflow-hidden bg-gradient-to-br from-primary via-secondary to-purple-600"
-    >
+    <>
+      <style>{recommendationsStyles}</style>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="relative flex flex-col h-full overflow-hidden bg-gradient-to-br from-primary via-secondary to-purple-600"
+      >
       {/* Логотип для результатов */}
       <div className="flex justify-center py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-8">
         <img src="./uralsib_logo_white.svg" alt="Банк Уралсиб" className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto" />
@@ -470,7 +479,13 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
             </div>
             
             {/* Сетка рекомендаций: 1 продукт (лучший тег) + 1 статья (худший тег) + персональные */}
-            <div className="space-y-4 w-full min-h-0 overflow-y-auto pr-1">
+            <div
+              className="recommendations-container h-full overflow-y-auto pr-1 flex flex-col gap-4"
+              style={{
+                transition: 'all 0.3s ease-in-out',
+                minHeight: '400px'
+              }}
+            >
               {/* Рекомендованный продукт по лучшему тегу */}
               {productRecommendation && (
                 <motion.div
@@ -518,47 +533,50 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
               )}
 
               {/* Остальные персональные рекомендации (оставляем одну карточку) */}
-              {personalRecommendations.slice(0, 1).map((rec, idx) => (
-                <motion.div
-                  key={rec.title}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 + idx * 0.1 }}
-                  className="flex items-start gap-4 p-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/30 transition-all duration-300 group cursor-pointer backdrop-blur-sm"
-                  onClick={() => handleGoToBank('https://uralsib.ru/')}
-                >
-                  <div className="text-2xl flex-shrink-0">{rec.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full font-medium">
-                        {rec.category}
-                      </span>
+              {personalRecommendations.slice(0, 1).map((rec, idx) => {
+                const typedRec = rec as { title: string; description: string; icon: string; category: string };
+                return (
+                  <motion.div
+                    key={typedRec.title}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 + idx * 0.1 }}
+                    className="flex items-start gap-4 p-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/30 transition-all duration-300 group cursor-pointer backdrop-blur-sm"
+                    onClick={() => handleGoToBank('https://uralsib.ru/')}
+                  >
+                    <div className="text-2xl flex-shrink-0">{typedRec.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full font-medium">
+                          {typedRec.category}
+                        </span>
+                      </div>
+                      <h4 className="text-white font-semibold text-base mb-2 group-hover:text-white/90 transition-colors">
+                        {typedRec.title}
+                      </h4>
+                      <p className="text-white/70 text-sm leading-relaxed">
+                        {typedRec.description}
+                      </p>
                     </div>
-                    <h4 className="text-white font-semibold text-base mb-2 group-hover:text-white/90 transition-colors">
-                      {rec.title}
-                    </h4>
-                    <p className="text-white/70 text-sm leading-relaxed">
-                      {rec.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
 
               {articleContent && (
                 <div className="mt-6 p-4 bg-white rounded-2xl text-gray-900 max-h-[60vh] overflow-auto">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-bold mr-4 truncate">{articleContent.title}</h3>
+                    <h3 className="text-lg font-bold mr-4 truncate">{(articleContent as any).title}</h3>
                     <button
                       type="button"
                       onClick={() => setArticleContent(null)}
-                      className="px-3 py-1 rounded-lg bg-primary text-white hover:bg-primary/90"
+                      className="px-4 py-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors font-medium"
                     >
-                      Назад к рекомендациям
+                      Назад
                     </button>
                   </div>
                   <div
                     className="article-content text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: articleContent.html }}
+                    dangerouslySetInnerHTML={{ __html: (articleContent as any).html }}
                   />
                 </div>
               )}
@@ -568,5 +586,6 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
         </div>
       </div>
     </motion.div>
+    </>
   );
-                }
+}

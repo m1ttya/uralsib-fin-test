@@ -1188,7 +1188,16 @@ function CoursesManager() {
         setError(null);
         setLoading(true);
         const res = await fetch('/api/admin/courses', { credentials: 'include' });
-        if (!res.ok) throw new Error('Не удалось загрузить курсы');
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || 'Не удалось загрузить курсы');
+        }
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          // Если сервер вернул не JSON, показываем понятное сообщение
+          setCourses([]);
+          return;
+        }
         const data = await res.json();
         setCourses(Array.isArray(data) ? data : []);
       } catch (e: any) {
@@ -1216,7 +1225,10 @@ function CoursesManager() {
             ) : error ? (
               <div className="text-red-600 text-sm">{error}</div>
             ) : courses.length === 0 ? (
-              <div className="text-gray-500">Курсов пока нет</div>
+              <div className="text-gray-500">
+                <div className="mb-2">Курсов пока нет</div>
+                <div className="text-xs text-gray-400">Функция управления курсами в разработке</div>
+              </div>
             ) : (
               courses.map((course) => (
                 <button
@@ -1233,10 +1245,17 @@ function CoursesManager() {
           </div>
         </div>
         <div className="lg:col-span-2 p-4">
-          <div className="text-center py-12">
-            <div className="text-gray-500 mb-2">Управление курсами</div>
-            <div className="text-sm text-gray-400">Здесь будет интерфейс для создания и редактирования курсов</div>
-          </div>
+          {error ? (
+            <div className="p-4 bg-red-50 border border-red-100 rounded-lg">
+              <div className="text-red-700 font-medium mb-1">Ошибка загрузки</div>
+              <div className="text-sm text-red-600">{error}</div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-500 mb-2">Управление курсами</div>
+              <div className="text-sm text-gray-400">Функция в разработке. Курсы пока не созданы.</div>
+            </div>
+          )}
         </div>
       </div>
     </div>

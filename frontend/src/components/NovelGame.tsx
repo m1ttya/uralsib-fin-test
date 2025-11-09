@@ -1,12 +1,4 @@
-import React, { useState, useEffect } from 'react';
-
-// Типы для визуальной новеллы
-interface Character {
-  id: string;
-  name: string;
-  avatar: string; // SVG или emoji
-  color: string;
-}
+import React, { useState } from 'react';
 
 interface Choice {
   text: string;

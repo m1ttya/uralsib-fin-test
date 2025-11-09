@@ -119,7 +119,7 @@ function BackgroundParallax() {
         return changed ? next : prev;
       });
       // spawn a subtle wave
-      const id = waveIdRef.current++;
+      waveIdRef.current++;
       // waves visual removed
       // background blast only if not popped a card and not from card press
       if (!popped && !isCardPressedRef.current) {

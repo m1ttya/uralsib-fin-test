@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -297,7 +297,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
   };
 
   // Валидация в реальном времени с debounce (только для регистрации)
-  const validateFormDebounced = () => {
+  const validateFormDebounced = useCallback(() => {
     if (mode !== 'register') return;
 
     if (validationTimeoutRef.current) {
@@ -306,7 +306,7 @@ export default function LoginModal({ isOpen, onClose, onSkip, fromStartTest = fa
     validationTimeoutRef.current = window.setTimeout(() => {
       validateTouchedFields();
     }, 500);
-  };
+  }, [mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

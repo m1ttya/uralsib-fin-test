@@ -7,7 +7,6 @@ import {
   createParticleSystem,
   updateParticles,
   createATM,
-  createBillboard,
   createSmallHouse,
   createShop,
   createTree,
@@ -250,10 +249,6 @@ camera.lookAt(0, -1.35, -10);
       scene.add(cityAreaR);
 
       // Ряд городских зданий и витрин вдоль дороги как движущиеся элементы (параллакс ближнего плана)
-      const bMat = new THREE.MeshToonMaterial({ color: 0x5a5a5a });
-      const winTex = createNoiseTexture(0xcccccc, 0xbdbdbd);
-      const winMat = new THREE.MeshToonMaterial({ map: winTex });
-
       const rangeStartCity = -240;
       const rangeEndCity = 80;
       for (let z = rangeStartCity; z < rangeEndCity; z += 40) {
@@ -690,27 +685,24 @@ camera.lookAt(0, -1.35, -10);
     if (!CITY_MODE) {
     // Лес по бокам: статический длинный массив инстансов (без движения), чтобы исключить появление на горизонте
     // Диапазон по Z покрывает далёкую даль (скрывается туманом) и ближнюю зону
-    const zMin = -2000, zMax = 200; // не используется напрямую для леса с тайлами, оставляем для других элементов
 
     // Геометрии/материалы для инстансов (разные материалы для легкого разнообразия оттенков)
-    // Разнообразие деревьев: два типа — лиственные и хвойные, плюс вариативность оттенков
-    const broadTrunkGeo = new THREE.CylinderGeometry(0.25, 0.4, 4.4, 8);
-    const broadTrunkMat = new THREE.MeshToonMaterial({ color: 0x8B5A2B });
-    const broadCrownGeo = new THREE.IcosahedronGeometry(1.7, 1);
+    const _broadTrunkGeo = new THREE.CylinderGeometry(0.25, 0.4, 4.4, 8);
+    const _broadTrunkMat = new THREE.MeshToonMaterial({ color: 0x8B5A2B });
+    const _broadCrownGeo = new THREE.IcosahedronGeometry(1.7, 1);
 
-    const pineTrunkGeo = new THREE.CylinderGeometry(0.18, 0.24, 4.8, 6);
-    const pineTrunkMat = new THREE.MeshToonMaterial({ color: 0x6d4a2e });
-    const pineCrownGeo = new THREE.ConeGeometry(1.3, 2.6, 8);
+    const _pineTrunkGeo = new THREE.CylinderGeometry(0.18, 0.24, 4.8, 6);
+    const _pineTrunkMat = new THREE.MeshToonMaterial({ color: 0x6d4a2e });
+    const _pineCrownGeo = new THREE.ConeGeometry(1.3, 2.6, 8);
 
-    const leafTexture1 = createNoiseTexture(0x2e8b57, 0x228b45);
-    const leafTexture2 = createNoiseTexture(0x2f9b57, 0x258b50);
-    const leafTexture3 = createNoiseTexture(0x2a7b47, 0x1e7339);
-    const bushTexture = createNoiseTexture(0x2c6b3a, 0x1e4a28);
-    const crownMats = [
-      new THREE.MeshToonMaterial({ map: leafTexture1 }),
-      new THREE.MeshToonMaterial({ map: leafTexture2 }),
-      new THREE.MeshToonMaterial({ map: leafTexture3 }),
-      new THREE.MeshToonMaterial({ map: leafTexture1 })
+    const _leafTexture1 = createNoiseTexture(0x2e8b57, 0x228b45);
+    const _leafTexture2 = createNoiseTexture(0x2f9b57, 0x258b50);
+    const _leafTexture3 = createNoiseTexture(0x2a7b47, 0x1e7339);
+    const _crownMats = [
+      new THREE.MeshToonMaterial({ map: _leafTexture1 }),
+      new THREE.MeshToonMaterial({ map: _leafTexture2 }),
+      new THREE.MeshToonMaterial({ map: _leafTexture3 }),
+      new THREE.MeshToonMaterial({ map: _leafTexture1 })
     ];
 
     const createForestStatic = (side: 'left' | 'right', count: number, zStart: number) => {
@@ -721,10 +713,10 @@ camera.lookAt(0, -1.35, -10);
       const broadCount = Math.floor(count * 0.6);
       const pineCount = count - broadCount;
 
-      const trunksBroad = new THREE.InstancedMesh(broadTrunkGeo, broadTrunkMat, broadCount);
-      const crownsBroad = new THREE.InstancedMesh(broadCrownGeo, crownMats[0], broadCount);
-      const trunksPine = new THREE.InstancedMesh(pineTrunkGeo, pineTrunkMat, pineCount);
-      const crownsPine = new THREE.InstancedMesh(pineCrownGeo, crownMats[1], pineCount);
+      const trunksBroad = new THREE.InstancedMesh(_broadTrunkGeo, _broadTrunkMat, broadCount);
+      const crownsBroad = new THREE.InstancedMesh(_broadCrownGeo, _crownMats[0], broadCount);
+      const trunksPine = new THREE.InstancedMesh(_pineTrunkGeo, _pineTrunkMat, pineCount);
+      const crownsPine = new THREE.InstancedMesh(_pineCrownGeo, _crownMats[1], pineCount);
 
       const dummy = new THREE.Object3D();
 
@@ -750,8 +742,8 @@ camera.lookAt(0, -1.35, -10);
         dummy.updateMatrix();
         crownsBroad.setMatrixAt(i, dummy.matrix);
 
-        const matIndex = Math.floor(Math.random() * crownMats.length);
-        const color = new THREE.Color((crownMats[matIndex] as unknown as THREE.MeshLambertMaterial).color.getHex());
+        const matIndex = Math.floor(Math.random() * _crownMats.length);
+        const color = new THREE.Color((_crownMats[matIndex] as unknown as THREE.MeshLambertMaterial).color.getHex());
         crownsBroad.setColorAt(i, color);
       }
 
@@ -776,8 +768,8 @@ camera.lookAt(0, -1.35, -10);
         dummy.updateMatrix();
         crownsPine.setMatrixAt(i, dummy.matrix);
 
-        const matIndex = Math.floor(Math.random() * crownMats.length);
-        const color = new THREE.Color((crownMats[matIndex] as unknown as THREE.MeshLambertMaterial).color.getHex());
+        const matIndex = Math.floor(Math.random() * _crownMats.length);
+        const color = new THREE.Color((_crownMats[matIndex] as unknown as THREE.MeshLambertMaterial).color.getHex());
         crownsPine.setColorAt(i, color);
       }
 
@@ -854,7 +846,6 @@ camera.lookAt(0, -1.35, -10);
     };
 
     // Лес слева и справа — много перекрывающихся групп с меньшим шагом, чтобы исключить разом пропадания
-    let tileDepth = 800;
     const tileSpacing = 250; // меньше глубины — сильное перекрытие
     const startZ = -2100;
     const endZ = 900;
@@ -867,11 +858,11 @@ camera.lookAt(0, -1.35, -10);
     }
 
     // Текстура кустов нужна в лесном режиме; при городском может не использоваться
-    const bushTexture = createNoiseTexture(0x2c6b3a, 0x1e4a28);
+    const _bushTexture = createNoiseTexture(0x2c6b3a, 0x1e4a28);
 
     if (!CITY_MODE) {
     // Дополнительные кусты в лесу (внутренний слой)
-    const innerBushes = new THREE.InstancedMesh(new THREE.SphereGeometry(0.5, 8, 6), new THREE.MeshToonMaterial({ map: bushTexture }), 1200);
+    const innerBushes = new THREE.InstancedMesh(new THREE.SphereGeometry(0.5, 8, 6), new THREE.MeshToonMaterial({ map: _bushTexture }), 1200);
     const iDummy = new THREE.Object3D();
     for (let i = 0; i < 1200; i++) {
       const side = Math.random() > 0.5 ? -1 : 1;
@@ -890,6 +881,7 @@ camera.lookAt(0, -1.35, -10);
 
     // Кусты у обочин — более низкие инстансы ближе к дороге
     const bushGeo = new THREE.SphereGeometry(0.6, 8, 6);
+    const bushTexture = createNoiseTexture(0x2c6b3a, 0x1e4a28);
     const bushMat = new THREE.MeshToonMaterial({ map: bushTexture });
     const bushesLeft = new THREE.InstancedMesh(bushGeo, bushMat, 500);
     bushesLeft.castShadow = false; // кусты не отбрасывают тени для производительности
@@ -967,7 +959,7 @@ camera.lookAt(0, -1.35, -10);
     if (!CITY_MODE) {
     // Создаем большие поля травы, уходящие к горизонту
     // Рельеф: делаем травяные плоскости сегментированными и слегка деформируем по синус-волнам
-    const makeHillyPlane = (w: number, h: number, segW: number, segH: number, color: number) => {
+    const makeHillyPlane = (w: number, h: number, segW: number, segH: number, _color: number) => {
       const geo = new THREE.PlaneGeometry(w, h, segW, segH);
       const pos = geo.attributes.position as THREE.BufferAttribute;
       for (let i = 0; i < pos.count; i++) {
@@ -975,7 +967,7 @@ camera.lookAt(0, -1.35, -10);
         const y = pos.getY(i);
         const z = pos.getZ(i);
         // Простая псевдо-шумовая функция на базе синусов
-        const n = Math.sin(x * 0.12) * Math.cos(z * 0.08) * 0.6 + Math.sin((x + z) * 0.05) * 0.4;
+        const _n = Math.sin(x * 0.12) * Math.cos(z * 0.08) * 0.6 + Math.sin((x + z) * 0.05) * 0.4;
         pos.setZ(i, z);
         pos.setY(i, y);
         // высоту рельефа записываем в смещение по оси Y после поворота плоскости
@@ -991,7 +983,6 @@ camera.lookAt(0, -1.35, -10);
 
 
     const grassTexture = createNoiseTexture(0x2a8f2a, 0x1e7320);
-    const grassMaterial = new THREE.MeshToonMaterial({ map: grassTexture });
 
     // Левое поле
     const grassLeft = makeHillyPlane(200, 400, 40, 80, 0x2a8f2a);
@@ -1431,7 +1422,7 @@ camera.lookAt(0, -1.35, -10);
     playerRef.current.rotation.z = Math.sin(runTime * 0.8) * 0.02;
 
     // Анимация конечностей (дети playerGroup: [body, leftArm, rightArm, leftLeg, rightLeg])
-    const [body, leftShoulder, rightShoulder, leftHip, rightHip] = playerRef.current.children as any;
+    const [_body, leftShoulder, rightShoulder, leftHip, rightHip] = playerRef.current.children as any;
     const armSwing = Math.sin(runTime) * 0.6;
     const legSwing = Math.sin(runTime) * 0.6;
     // Руки двигаются вдоль тела: вращение по X (вперёд-назад) + небольшое прижатие к телу по Y
@@ -1443,10 +1434,10 @@ camera.lookAt(0, -1.35, -10);
     leftHip.rotation.x = -legSwing * 1.2;
     rightHip.rotation.x = legSwing * 1.2;
     // Сгиб в локтях/коленях: локти сгибаются на замахе назад, колени на выносе вперёд
-    const [leftUpperArm, leftElbow] = leftShoulder.children as any;
-    const [rightUpperArm, rightElbow] = rightShoulder.children as any;
-    const [leftThigh, leftKnee] = leftHip.children as any;
-    const [rightThigh, rightKnee] = rightHip.children as any;
+    const [_leftUpperArm, leftElbow] = leftShoulder.children as any;
+    const [_rightUpperArm, rightElbow] = rightShoulder.children as any;
+    const [_leftThigh, leftKnee] = leftHip.children as any;
+    const [_rightThigh, rightKnee] = rightHip.children as any;
     // Сгиб в локтях поверх базового угла (руки остаются согнутыми)
     leftElbow.rotation.x = Math.PI * 0.45 + Math.max(0, -armSwing) * 0.4;
     rightElbow.rotation.x = Math.PI * 0.45 + Math.max(0, armSwing) * 0.4;
@@ -1456,8 +1447,8 @@ camera.lookAt(0, -1.35, -10);
     leftKnee.rotation.x = -leftKneeBend * 0.9; // сгиб вперёд (отрицательный X)
     rightKnee.rotation.x = -rightKneeBend * 0.9; // умеренный угол ~50°
     // Кисти смотрят вперёд: разворачиваем ладони по X (вперёд по сцене)
-    const [leftForeArm, leftHand] = leftElbow.children as any;
-    const [rightForeArm, rightHand] = rightElbow.children as any;
+    const [_leftForeArm, leftHand] = leftElbow.children as any;
+    const [_rightForeArm, rightHand] = rightElbow.children as any;
     leftHand.rotation.x = -Math.PI / 2 + Math.sin(runTime) * 0.05;
     rightHand.rotation.x = -Math.PI / 2 - Math.sin(runTime) * 0.05;
 

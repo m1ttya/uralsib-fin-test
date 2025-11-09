@@ -2,6 +2,14 @@
 import { motion } from 'framer-motion';
 import CollapseText from './CollapseText';
 
+const styles = `
+  .question-card-content {
+    position: relative;
+    overflow: visible !important;
+    overflow-x: visible !important;
+  }
+`;
+
 type Props = {
   question: string;
   options: string[];
@@ -10,8 +18,6 @@ type Props = {
   showFeedback?: boolean;
   correctIndex?: number;
   correctShuffledIndex?: number;
-  onNext?: () => void;
-  canProceed?: boolean;
   explanation?: string;
 };
 
@@ -23,13 +29,13 @@ export default function QuestionCard({
   showFeedback = false,
   correctIndex,
   correctShuffledIndex,
-  onNext,
-  canProceed = false,
   explanation
 }: Props) {
   const capitalizeFirst = (s: string) => (s && s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s);
   return (
     <div>
+      <style>{styles}</style>
+      <div className="question-card-content">
       <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-primary text-left font-bold">{question}</h2>
       <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
         {options.map((option, idx) => {
@@ -80,37 +86,6 @@ export default function QuestionCard({
           <CollapseText title="Почему так" text={explanation} />
         </div>
       )}
-
-      {/* Кнопка далее: скрыта на мобильных (там отрисовывается глобально), в потоке на sm+ */}
-      <div className="hidden sm:flex h-16 justify-center items-center">
-        {onNext && (
-          <div className="flex justify-center w-full">
-          <motion.button
-            whileTap={canProceed ? { scale: 0.95 } : {}}
-            onClick={onNext}
-            disabled={!canProceed}
-            className={`relative w-12 h-12 rounded-full premium-button transition-all duration-500 shadow-lg flex items-center justify-center ${
-              canProceed
-                ? 'bg-primary text-white hover:bg-secondary hover:shadow-xl hover:shadow-primary/30'
-                : 'bg-gray-100 text-gray-300'
-            }`}
-          >
-            <svg 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              className="transition-transform duration-300 w-4 h-4"
-            >
-              <path 
-                d="M9 18L15 12L9 6" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-          </motion.button>
-          </div>
-        )}
       </div>
     </div>
   );

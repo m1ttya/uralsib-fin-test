@@ -70,18 +70,35 @@ export default function CategorySelection({ onCategorySelect }: Props) {
               className="w-full px-4 sm:px-6 md:px-8 pb-4 sm:pb-6 md:pb-8"
             >
                 <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-center text-gray-800 mb-4 sm:mb-6 md:mb-8" style={{
-                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  fontFamily: "'Uralsib-Regular', 'Uralsib', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontWeight: '700',
                   letterSpacing: '-0.02em',
                   lineHeight: '1.1'
                 }}>
                   Выберите категорию
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full">
-                        {categories.map((category) => (
+                <div className="w-full">
+                  {/* Строки по 3 элемента, каждая строка адаптируется под количество элементов в ней */}
+                  {Array.from({ length: Math.ceil(categories.length / 3) }).map((_, rowIndex) => {
+                    const rowItems = categories.slice(rowIndex * 3, rowIndex * 3 + 3);
+                    const itemCount = rowItems.length;
+
+                    // Определяем классы сетки в зависимости от количества элементов в строке
+                    const getGridClasses = (count: number) => {
+                      if (count === 1) return 'grid-cols-1';
+                      if (count === 2) return 'grid-cols-1 sm:grid-cols-2';
+                      return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+                    };
+
+                    return (
+                      <div
+                        key={rowIndex}
+                        className={`grid ${getGridClasses(itemCount)} gap-3 sm:gap-4 md:gap-6 w-full ${rowIndex > 0 ? 'mt-3 sm:mt-4 md:mt-6' : ''}`}
+                      >
+                        {rowItems.map((category) => (
                           <motion.button
                             key={category.id}
-                            whileHover={{ 
+                            whileHover={{
                               scale: 1.05,
                               transition: { duration: 0.15 }
                             }}
@@ -93,6 +110,9 @@ export default function CategorySelection({ onCategorySelect }: Props) {
                             <div className="premium-text text-gray-800 text-base sm:text-lg md:text-xl lg:text-2xl text-center font-semibold">{category.name}</div>
                           </motion.button>
                         ))}
+                      </div>
+                    );
+                  })}
                 </div>
             </motion.div>
           ) : (
@@ -105,30 +125,50 @@ export default function CategorySelection({ onCategorySelect }: Props) {
               className="w-full px-4 sm:px-6 md:px-8 pb-4 sm:pb-6 md:pb-8"
             >
                 <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-center text-gray-800 mb-4 sm:mb-6 md:mb-8" style={{
-                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  fontFamily: "'Uralsib-Regular', 'Uralsib', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontWeight: '700',
                   letterSpacing: '-0.02em',
                   lineHeight: '1.1'
                 }}>
                   Выберите возрастную группу
                 </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full">
-                  {ageGroups.map((ageGroup) => (
-                    <motion.button
-                      key={ageGroup.id}
-                      whileHover={{ 
-                        scale: 1.05,
-                        transition: { duration: 0.15 }
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleAgeGroupSelect(ageGroup.id)}
-                      className="p-4 sm:p-6 md:p-8 lg:p-10 rounded-3xl bg-white transition-all duration-300 text-center flex flex-col items-center justify-center min-h-[120px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[200px] shadow-lg hover:shadow-2xl hover:shadow-button-primary/20"
-                    >
-                      <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-3 sm:mb-4 md:mb-6 flex items-center justify-center">{ageGroup.icon}</div>
-                      <div className="premium-text text-gray-800 text-base sm:text-lg md:text-xl lg:text-2xl text-center font-semibold">{ageGroup.name}</div>
-                    </motion.button>
-                  ))}
+
+                <div className="w-full">
+                  {/* Строки по 3 элемента, каждая строка адаптируется под количество элементов в ней */}
+                  {Array.from({ length: Math.ceil(ageGroups.length / 3) }).map((_, rowIndex) => {
+                    const rowItems = ageGroups.slice(rowIndex * 3, rowIndex * 3 + 3);
+                    const itemCount = rowItems.length;
+
+                    // Определяем классы сетки в зависимости от количества элементов в строке
+                    const getGridClasses = (count: number) => {
+                      if (count === 1) return 'grid-cols-1';
+                      if (count === 2) return 'grid-cols-1 sm:grid-cols-2';
+                      return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+                    };
+
+                    return (
+                      <div
+                        key={rowIndex}
+                        className={`grid ${getGridClasses(itemCount)} gap-3 sm:gap-4 md:gap-6 w-full ${rowIndex > 0 ? 'mt-3 sm:mt-4 md:mt-6' : ''}`}
+                      >
+                        {rowItems.map((ageGroup) => (
+                          <motion.button
+                            key={ageGroup.id}
+                            whileHover={{
+                              scale: 1.05,
+                              transition: { duration: 0.15 }
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleAgeGroupSelect(ageGroup.id)}
+                            className="p-4 sm:p-6 md:p-8 lg:p-10 rounded-3xl bg-white transition-all duration-300 text-center flex flex-col items-center justify-center min-h-[120px] sm:min-h-[150px] md:min-h-[180px] lg:min-h-[200px] shadow-lg hover:shadow-2xl hover:shadow-button-primary/20"
+                          >
+                            <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-3 sm:mb-4 md:mb-6 flex items-center justify-center">{ageGroup.icon}</div>
+                            <div className="premium-text text-gray-800 text-base sm:text-lg md:text-xl lg:text-2xl text-center font-semibold">{ageGroup.name}</div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
             </motion.div>
           )}

@@ -44,6 +44,7 @@ export default function PersonalCabinet() {
   const [cabinetData, setCabinetData] = useState<CabinetData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'tests' | 'courses' | 'activity'>('tests');
+  // user is used in the template
 
   useEffect(() => {
     // Scroll to top when component mounts
@@ -72,6 +73,7 @@ export default function PersonalCabinet() {
     return 'text-red-600';
   };
 
+  // Unused function kept for future use
   const getScoreBadgeColor = (percentage: number) => {
     if (percentage >= 80) return 'bg-green-100 text-green-800';
     if (percentage >= 60) return 'bg-yellow-100 text-yellow-800';
