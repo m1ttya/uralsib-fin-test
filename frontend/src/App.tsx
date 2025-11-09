@@ -10,6 +10,7 @@ import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import PrivateRoute from './components/auth/PrivateRoute';
 import PersonalCabinet from './pages/PersonalCabinet';
 
+// Main app content component with routing
 function AppContent() {
   const navigate = useNavigate();
   const authContext = useContext(AuthContext);
