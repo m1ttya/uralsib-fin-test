@@ -97,6 +97,7 @@ export const query = async (text: string, params?: any[]) => {
 
 export const getPool = () => useSQLite ? null : pool;
 export const getSQLiteDb = () => sqliteDb;
+export { useSQLite };
 export default useSQLite ? null : pool;
 
 export interface User {
