@@ -11,6 +11,7 @@ import fs from 'fs/promises';
 import multer from 'multer';
 import mammoth from 'mammoth';
 import * as cheerio from 'cheerio';
+import { initDatabase } from './init-db';
 
 
 const app = express();
@@ -541,7 +542,15 @@ export default handler;
 
 // Start server only if not in serverless environment
 if (process.env.VERCEL !== '1') {
-  app.listen(port, '0.0.0.0', () => {
-     console.log(`Server listening on http://localhost:${port}`);
-  });
+  // Initialize database before starting server
+  initDatabase()
+    .then(() => {
+      app.listen(port, '0.0.0.0', () => {
+        console.log(`Server listening on http://localhost:${port}`);
+      });
+    })
+    .catch((error) => {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    });
 }
