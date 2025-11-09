@@ -1,0 +1,5 @@
+# Игнорируем все JSX/TSX файлы и frontend
+*.tsx
+*.jsx
+../frontend/
+../../frontend/

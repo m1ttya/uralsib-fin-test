@@ -1,15 +1,9 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
     "outDir": "dist",
-    "rootDir": "src",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true
+    "rootDir": "src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["../frontend/**/*", "node_modules"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "**/*.tsx", "**/*.jsx"]
 }
