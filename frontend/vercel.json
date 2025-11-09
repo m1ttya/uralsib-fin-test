@@ -1,4 +1,12 @@
 {
+  "env": {
+    "VITE_API_URL": "https://uralsib-fin-test-production.up.railway.app"
+  },
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://uralsib-fin-test-production.up.railway.app"
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",
