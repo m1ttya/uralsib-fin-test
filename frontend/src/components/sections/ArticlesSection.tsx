@@ -12,6 +12,7 @@ type Article = {
 };
 
 export default function ArticlesSection() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [items, setItems] = useState<Article[]>([]);
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<Article | null>(null);
@@ -24,7 +25,8 @@ export default function ArticlesSection() {
   const load = async () => {
     try {
       setError(null);
-      const res = await fetch('/api/articles', { cache: 'no-store' });
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const res = await fetch(`${baseUrl}/api/articles`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Не удалось загрузить список статей');
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
@@ -43,9 +45,10 @@ export default function ArticlesSection() {
       setError(null);
       setHtml('');
       setPdfUrl(null);
-      
+
       // Загружаем содержимое статьи из нового API
-      const res = await fetch(`/api/articles/${a.id}`, { cache: 'no-store' });
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const res = await fetch(`${baseUrl}/api/articles/${a.id}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Не удалось загрузить статью');
       const articleData = await res.json();
       setHtml(articleData.content);

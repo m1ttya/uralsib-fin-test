@@ -12,6 +12,7 @@ type Course = {
 };
 
 export default function CoursesSection() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [items, setItems] = useState<Course[]>([]);
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<Course | null>(null);
@@ -21,7 +22,8 @@ export default function CoursesSection() {
   const load = async () => {
     try {
       setError(null);
-      const res = await fetch('/api/courses', { cache: 'no-store' });
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const res = await fetch(`${baseUrl}/api/courses`, { cache: 'no-store' });
       if (!res.ok) {
         setItems([]);
         return;
@@ -44,7 +46,8 @@ export default function CoursesSection() {
       setError(null);
 
       // Загружаем содержимое курса
-      const res = await fetch(`/api/courses/${c.id}`, { cache: 'no-store' });
+      const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+      const res = await fetch(`${baseUrl}/api/courses/${c.id}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Не удалось загрузить курс');
       // const courseData = await res.json();
     } catch (e: any) {
