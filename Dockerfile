@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY backend/src ./backend/src
 RUN cd backend && npm run build
 
 # Production
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 COPY --from=0 /app/backend/dist ./backend/dist
 COPY --from=0 /app/backend/node_modules ./backend/node_modules
