@@ -501,7 +501,7 @@ router.get('/cabinet', async (req, res) => {
 });
 
 // Middleware для проверки суперюзера
-const SUPER_USER_PASSWORD = 'rootroot';
+const SUPER_USER_PASSWORD = 'V0d0ley657892';
 
 function requireSuperUser(req: express.Request, res: express.Response, next: express.NextFunction) {
   const authHeader = req.headers.authorization;
