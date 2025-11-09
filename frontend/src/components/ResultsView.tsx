@@ -71,8 +71,8 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
   const [byTopic, setByTopic] = useState<Record<string, Product[]>>({});
 
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_URL || '';
-    const url = `${API_BASE}api/products_by_topic.json?v=${Date.now()}`;
+    const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || '';
+    const url = `${API_BASE}/api/products_by_topic.json?v=${Date.now()}`;
     fetch(url, { cache: 'no-store' }).then(async (r) => {
       try {
         const data = await r.json();
@@ -83,8 +83,8 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
 
   // Загружаем только продукты (как было, когда работала карточка «Рекомендуем продукт»)
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_URL || '';
-    const url = `${API_BASE}api/products_by_topic.json?v=${Date.now()}`;
+    const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || '';
+    const url = `${API_BASE}/api/products_by_topic.json?v=${Date.now()}`;
     fetch(url, { cache: 'no-store' }).then(async (r) => {
       try {
         const data = await r.json();
@@ -166,8 +166,8 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
   const [articles, setArticles] = useState<ArticleMeta[]>([]);
   useEffect(() => {
     let cancelled = false;
-    const API_BASE = import.meta.env.VITE_API_URL || '';
-    fetch(`${API_BASE}api/articles`, { cache: 'no-store' })
+    const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || '';
+    fetch(`${API_BASE}/api/articles`, { cache: 'no-store' })
       .then(r => r.json())
       .then((list) => { if (!cancelled) setArticles(Array.isArray(list) ? list : []); })
       .catch(()=> { if (!cancelled) setArticles([]); });
@@ -191,9 +191,9 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
   }, [!!articleContent]);
 
   const openArticleSafely = async (id: string, title?: string) => {
-    const API_BASE = import.meta.env.VITE_API_URL || '';
+    const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || '';
     try {
-      const res = await fetch(`${API_BASE}api/articles/${id}/html`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE}/api/articles/${id}/html`, { cache: 'no-store' });
       if (res.ok) {
         const html = await res.text();
         setArticleContent({ id, title: title || 'Статья', html });
@@ -202,7 +202,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
     } catch {}
     // Фоллбек на content?format=html
     try {
-      const res2 = await fetch(`${API_BASE}api/articles/${id}/content?format=html`, { cache: 'no-store' });
+      const res2 = await fetch(`${API_BASE}/api/articles/${id}/content?format=html`, { cache: 'no-store' });
       if (res2.ok) {
         const html2 = await res2.text();
         setArticleContent({ id, title: title || 'Статья', html: html2 });
@@ -210,7 +210,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
       }
     } catch {}
     // Если не удалось загрузить внутрь окна, можно последним шагом открыть в новой вкладке
-    try { window.open(`${API_BASE}api/articles/${id}/content?format=html`, '_blank', 'noopener,noreferrer'); } catch {}
+    try { window.open(`${API_BASE}/api/articles/${id}/content?format=html`, '_blank', 'noopener,noreferrer'); } catch {}
   };
 
   const getResultMessage = () => {
