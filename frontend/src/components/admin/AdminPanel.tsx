@@ -1734,7 +1734,7 @@ export default function AdminPanel() {
               href="#"
               onClick={async (e) => {
                 e.preventDefault();
-                try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+                try { await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' }); } catch {}
                 navigate('/');
               }}
               className="text-sm text-gray-600 hover:text-primary inline-flex items-center gap-2"
