@@ -539,9 +539,9 @@ const handler = app;
 // Export for Vercel
 export default handler;
 
-// CommonJS export for local development
+// Start server only if not in serverless environment
 if (process.env.VERCEL !== '1') {
-  app.listen(port, () => {
+  app.listen(port, '0.0.0.0', () => {
      console.log(`Server listening on http://localhost:${port}`);
   });
 }
