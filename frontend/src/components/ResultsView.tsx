@@ -72,7 +72,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
 
   useEffect(() => {
     const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || '';
-    const url = `${API_BASE}/api/products_by_topic.json?v=${Date.now()}`;
+    const url = `${API_BASE}/api/products_by_topic?v=${Date.now()}`;
     fetch(url, { cache: 'no-store' }).then(async (r) => {
       try {
         const data = await r.json();
@@ -84,7 +84,7 @@ export default function ResultsView({ test, answers, correctByQ, onRestart, onTo
   // Загружаем только продукты (как было, когда работала карточка «Рекомендуем продукт»)
   useEffect(() => {
     const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') || '';
-    const url = `${API_BASE}/api/products_by_topic.json?v=${Date.now()}`;
+    const url = `${API_BASE}/api/products_by_topic?v=${Date.now()}`;
     fetch(url, { cache: 'no-store' }).then(async (r) => {
       try {
         const data = await r.json();

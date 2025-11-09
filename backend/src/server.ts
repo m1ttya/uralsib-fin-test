@@ -146,6 +146,16 @@ app.get('/api/articles', async (_req, res) => {
 // Admin endpoints: products_by_topic
 const PRODUCTS_FILE = path.resolve(__dirname, '../data/products_by_topic.json');
 
+// Public endpoint for products_by_topic
+app.get('/api/products_by_topic', async (_req, res) => {
+  try {
+    const data = await fs.readFile(PRODUCTS_FILE, 'utf8');
+    res.type('application/json').send(data);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Не удалось прочитать файл', details: e?.message });
+  }
+});
+
 // ===== Admin: Tests =====
 const TESTS_ROOT = path.resolve(__dirname, '../data/tests');
 const TESTS_META = path.resolve(__dirname, '../data/tests_meta.json');
