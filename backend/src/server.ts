@@ -536,6 +536,9 @@ const port = process.env.PORT ? Number(process.env.PORT) : 4001;
 // Export app for Vercel
 export default app;
 
+// CommonJS export for Vercel
+module.exports = app;
+
 // Start server only if not in serverless environment
 if (process.env.VERCEL !== '1') {
   app.listen(port, () => {
