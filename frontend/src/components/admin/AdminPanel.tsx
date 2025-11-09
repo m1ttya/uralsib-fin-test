@@ -83,6 +83,7 @@ const UndoIcon = () => (
 const EditIcon = () => <PencilIcon />;
 
 function ProductsEditor() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +95,7 @@ function ProductsEditor() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch(${API_BASE}/api/admin/products_by_topic', { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/products_by_topic`, { credentials: 'include' });
       if (!res.ok) throw new Error('Ошибка загрузки');
       const json = (await res.json()) as ProductsByTopic;
       setData(json);
@@ -140,7 +141,7 @@ function ProductsEditor() {
       setSaving(true);
       const errs = validate(data);
       if (Object.keys(errs).length) throw new Error('Исправьте ошибки перед сохранением');
-      const res = await fetch(${API_BASE}/api/admin/products_by_topic', {
+      const res = await fetch(`${API_BASE}/api/admin/products_by_topic`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -336,6 +337,7 @@ function ArticlesManager() {
 }
 
 function ArticlesManagerOld() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   type FileItem = { name: string; size: number; mtime: number };
   type Group = { base: string; docx?: FileItem; html?: FileItem; pdf?: FileItem; others: FileItem[] };
 
@@ -371,7 +373,7 @@ function ArticlesManagerOld() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch(${API_BASE}/api/admin/articles', { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/articles`, { credentials: 'include' });
       if (!res.ok) {
         const text = await res.text().catch(()=>'');
         throw new Error(text || 'Ошибка загрузки списка');
@@ -386,7 +388,7 @@ function ArticlesManagerOld() {
       setGroups(groupFiles(data));
       // load titles meta
       try {
-        const mres = await fetch(${API_BASE}/api/admin/articles/meta', { credentials: 'include' });
+        const mres = await fetch(`${API_BASE}/api/admin/articles/meta`, { credentials: 'include' });
         if (mres.ok) {
           const meta = await mres.json();
           setTitles(meta?.titles || {});
@@ -407,7 +409,7 @@ function ArticlesManagerOld() {
     const fd = new FormData();
     fd.append('file', file);
     try {
-      const res = await fetch(${API_BASE}/api/admin/articles/upload', { method: 'POST', body: fd, credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/articles/upload`, { method: 'POST', body: fd, credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Не удалось загрузить');
       await load();
@@ -428,7 +430,7 @@ function ArticlesManagerOld() {
   };
 
   const onDeleteFile = async (name: string) => {
-    const res = await fetch(`/api/admin/articles/${encodeURIComponent(name)}`, { method: 'DELETE', credentials: 'include' });
+    const res = await fetch(`${API_BASE}/api/admin/articles/${encodeURIComponent(name)}`, { method: 'DELETE', credentials: 'include' });
     if (!res.ok) throw new Error('Не удалось удалить');
   };
 
@@ -478,20 +480,20 @@ function ArticlesManagerOld() {
                     setPreviewPdfUrl(null);
                     let name = g.html?.name || (g.docx ? (g.docx.name.replace(/\.docx$/i, '.html')) : null);
                     if (name) {
-                      let resp = await fetch(`/api/admin/articles/html?name=${encodeURIComponent(name)}`, { credentials: 'include' });
+                      let resp = await fetch(`${API_BASE}/api/admin/articles/html?name=${encodeURIComponent(name)}`, { credentials: 'include' });
                       if (resp.status === 404 && g.docx) {
                         // попробуем сконвертировать на лету
-                        const conv = await fetch(`/api/admin/articles/convert?name=${encodeURIComponent(g.docx.name)}`, { credentials: 'include' });
+                        const conv = await fetch(`${API_BASE}/api/admin/articles/convert?name=${encodeURIComponent(g.docx.name)}`, { credentials: 'include' });
                         if (conv.ok) {
                           name = g.docx.name.replace(/\.docx$/i, '.html');
-                          resp = await fetch(`/api/admin/articles/html?name=${encodeURIComponent(name)}`, { credentials: 'include' });
+                          resp = await fetch(`${API_BASE}/api/admin/articles/html?name=${encodeURIComponent(name)}`, { credentials: 'include' });
                         }
                       }
                       const html = await resp.text();
                       setPreviewHtml(html);
                     } else if (g.pdf) {
                       setPreviewHtml(null);
-                      setPreviewPdfUrl(`/articles/${encodeURIComponent(g.pdf.name)}`);
+                      setPreviewPdfUrl(`${API_BASE}/articles/${encodeURIComponent(g.pdf.name)}`);
                     } else {
                       setPreviewHtml(null);
                     }
@@ -523,7 +525,7 @@ function ArticlesManagerOld() {
 
                             // 1) Сохраняем метаданные названия (как и сейчас)
                             const payload = { titles: { ...titles, [oldBase]: newTitle } };
-                            const res = await fetch(${API_BASE}/api/admin/articles/meta', {
+                            const res = await fetch(`${API_BASE}/api/admin/articles/meta`, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               credentials: 'include',
@@ -533,7 +535,7 @@ function ArticlesManagerOld() {
 
                             // 2) Если база изменилась — переименовываем файлы статьи на бэкенде
                             if (newTitle !== oldBase) {
-                              const r = await fetch(${API_BASE}/api/admin/articles/rename', {
+                              const r = await fetch(`${API_BASE}/api/admin/articles/rename`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
@@ -569,7 +571,7 @@ function ArticlesManagerOld() {
                         try {
                           setSavingTitle(g.base);
                           const payload = { titles: { ...titles, [g.base]: titles[g.base] ?? g.base } };
-                          const res = await fetch(${API_BASE}/api/admin/articles/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                          const res = await fetch(`${API_BASE}/api/admin/articles/meta`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                           if (!res.ok) throw new Error('Не удалось сохранить название');
                         } catch (e:any) { setError(e?.message || 'Ошибка сохранения названия'); }
                         finally { setSavingTitle(null); }
@@ -615,7 +617,7 @@ function ArticlesManagerOld() {
                       const payload = { titles: { ...titles, [selectedBase!]: next } };
                       try {
                         setSavingTitle(selectedBase!);
-                        await fetch(${API_BASE}/api/admin/articles/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                        await fetch(`${API_BASE}/api/admin/articles/meta`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                         setTitles(payload.titles);
                       } finally {
                         setSavingTitle(null);
@@ -646,10 +648,11 @@ function ArticlesManagerOld() {
 }
 
 function TestsManager() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   type ProductItem = { title: string; linkUrl: string; linkText?: string; category?: string };
   const [productsByTopicForTests, setProductsByTopicForTests] = useState<Record<string, ProductItem[]>>({});
   useEffect(() => {
-    fetch(${API_BASE}/api/admin/products_by_topic', { credentials: 'include' })
+    fetch(`${API_BASE}/api/admin/products_by_topic`, { credentials: 'include' })
       .then(r => r.json()).then((d)=> setProductsByTopicForTests(d || {})).catch(()=>setProductsByTopicForTests({}));
   }, []);
 
@@ -668,7 +671,7 @@ function TestsManager() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch(${API_BASE}/api/admin/tests/list', { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/tests/list`, { credentials: 'include' });
       if (!res.ok) throw new Error('Не удалось получить список тестов');
       const data = await res.json();
       setTree(data);
@@ -684,7 +687,7 @@ function TestsManager() {
   useEffect(() => {
     const loadMeta = async () => {
       try {
-        const res = await fetch(${API_BASE}/api/admin/tests/meta', { credentials: 'include' });
+        const res = await fetch(`${API_BASE}/api/admin/tests/meta`, { credentials: 'include' });
         if (!res.ok) return;
         const meta = await res.json();
         setTitles(meta?.titles || {});
@@ -696,7 +699,7 @@ function TestsManager() {
   const openFile = async (relPath: string) => {
     try {
       setSelectedPath(relPath);
-      const res = await fetch(`/api/admin/tests/get?path=${encodeURIComponent(relPath)}`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/tests/get?path=${encodeURIComponent(relPath)}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Не удалось загрузить файл');
       const data = await res.json();
       setJson(data);
@@ -709,7 +712,7 @@ function TestsManager() {
     if (!selectedPath) return;
     try {
       setSaving(true);
-      const res = await fetch(`/api/admin/tests/save?path=${encodeURIComponent(selectedPath)}`, {
+      const res = await fetch(`${API_BASE}/api/admin/tests/save?path=${encodeURIComponent(selectedPath)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -728,7 +731,7 @@ function TestsManager() {
     if (!confirm(`Удалить тест "${selectedPath}"? Это действие нельзя отменить.`)) return;
     try {
       setDeleting(true);
-      const res = await fetch(`/api/tests/admin/delete?path=${encodeURIComponent(selectedPath)}`, {
+      const res = await fetch(`${API_BASE}/api/tests/admin/delete?path=${encodeURIComponent(selectedPath)}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -891,10 +894,11 @@ function TestsManager() {
   }), []);
 
  const ImportForm = ({ onDone }: { onDone: ()=>void }) => {
+    const API_BASE = import.meta.env.VITE_API_URL || '';
     // получаем список корневых папок из дерева, если оно уже загружено
     const rootFolders = Object.keys(tree?.folders || {});
     const [folder, setFolder] = useState<string>(rootFolders[0] || 'adults');
-    
+
     const [newFolder, setNewFolder] = useState<string>('');
     const [fileName, setFileName] = useState<string>('new_test');
     const [title, setTitle] = useState('Новый тест');
@@ -912,7 +916,7 @@ function TestsManager() {
       try {
         const fd = new FormData();
         fd.append('file', file);
-        const res = await fetch(`/api/admin/tests/import?path=${encodeURIComponent(rel)}&title=${encodeURIComponent(title)}`, { method: 'POST', body: fd, credentials: 'include' });
+        const res = await fetch(`${API_BASE}/api/admin/tests/import?path=${encodeURIComponent(rel)}&title=${encodeURIComponent(title)}`, { method: 'POST', body: fd, credentials: 'include' });
         const data = await res.json().catch(()=>null);
         if (!res.ok) throw new Error(data?.error || 'Импорт не удался');
         onDone();
@@ -968,7 +972,7 @@ function TestsManager() {
                 if (folder==='__new__' && !newFolder.trim()) { setErr('Укажите имя новой папки'); return; }
                 setBusy(true);
                 const payload = { id: title.replace(/\s+/g,'_'), title, questions: [] };
-                const res = await fetch(`/api/admin/tests/save?path=${encodeURIComponent(rel)}`, {
+                const res = await fetch(`${API_BASE}/api/admin/tests/save?path=${encodeURIComponent(rel)}`, {
                   method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload)
                 });
                 if (!res.ok) throw new Error('Не удалось создать файл');
@@ -1004,7 +1008,7 @@ function TestsManager() {
                     try {
                       setSavingTitleKey(name);
                       const payload = { titles: { ...titles } };
-                      const res = await fetch(${API_BASE}/api/admin/tests/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                      const res = await fetch(`${API_BASE}/api/admin/tests/meta`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                       if (!res.ok) throw new Error('Не удалось сохранить отображаемое имя');
                     } catch (e:any) {
                       setError(e?.message || 'Ошибка сохранения названия категории');
@@ -1023,7 +1027,7 @@ function TestsManager() {
                   const folderPath = `${base}${name}`;
                   if (!confirm(`Удалить папку "${folderPath}" со всем содержимым?`)) return;
                   try {
-                    const res = await fetch(`/api/admin/tests/delete-folder?path=${encodeURIComponent(folderPath)}`, {
+                    const res = await fetch(`${API_BASE}/api/admin/tests/delete-folder?path=${encodeURIComponent(folderPath)}`, {
                       method: 'DELETE',
                       credentials: 'include',
                     });
@@ -1058,7 +1062,7 @@ function TestsManager() {
                     onClick={async () => {
                       if (!confirm(`Удалить тест "${f}"?`)) return;
                       try {
-                        const res = await fetch(`/api/tests/admin/delete?path=${encodeURIComponent(`${base}${name}/${f}`)}`, {
+                        const res = await fetch(`${API_BASE}/api/tests/admin/delete?path=${encodeURIComponent(`${base}${name}/${f}`)}`, {
                           method: 'DELETE',
                           credentials: 'include'
                         });
@@ -1177,6 +1181,7 @@ function StatCard({ title, value, hint, spark }: { title: string; value: string;
 }
 
 function CoursesManager() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courses, setCourses] = useState<any[]>([]);
@@ -1186,7 +1191,7 @@ function CoursesManager() {
       try {
         setError(null);
         setLoading(true);
-        const res = await fetch(${API_BASE}/api/admin/courses', { credentials: 'include' });
+        const res = await fetch(`${API_BASE}/api/admin/courses`, { credentials: 'include' });
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || 'Не удалось загрузить курсы');
@@ -1262,6 +1267,7 @@ function CoursesManager() {
 }
 
 function Overview() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tests, setTests] = useState<{ totalFiles: number; byFolder: Record<string, number> }>({ totalFiles: 0, byFolder: {} });
@@ -1325,7 +1331,7 @@ function Overview() {
       try {
         setError(null); setLoading(true);
         // tests
-        const tRes = await fetch(${API_BASE}/api/admin/tests/list', { credentials: 'include' });
+        const tRes = await fetch(`${API_BASE}/api/admin/tests/list`, { credentials: 'include' });
         if (tRes.ok) {
           const tree = await tRes.json();
           const byFolder: Record<string, number> = {};
@@ -1343,7 +1349,7 @@ function Overview() {
           setTests({ totalFiles: total, byFolder });
         }
         // articles - используем meta endpoint для получения данных о статьях
-        const aRes = await fetch(${API_BASE}/api/admin/articles/meta', { credentials: 'include' });
+        const aRes = await fetch(`${API_BASE}/api/admin/articles/meta`, { credentials: 'include' });
         if (aRes.ok) {
           const meta = await aRes.json();
           // meta - это массив статей с информацией о docx и html
@@ -1360,7 +1366,7 @@ function Overview() {
           }
         }
         // products
-        const pRes = await fetch(${API_BASE}/api/admin/products_by_topic', { credentials: 'include' });
+        const pRes = await fetch(`${API_BASE}/api/admin/products_by_topic`, { credentials: 'include' });
         if (pRes.ok) {
           const data = await pRes.json();
           const categories = Object.keys(data || {}).length;
@@ -1505,6 +1511,7 @@ function Overview() {
 }
 
 function UsersManager() {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -1518,7 +1525,7 @@ function UsersManager() {
     setError('');
 
     try {
-      const response = await fetch('/api/users/admin/verify', {
+      const response = await fetch(`${API_BASE}/api/users/admin/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1545,7 +1552,7 @@ function UsersManager() {
   const loadUsers = async () => {
     setLoadingUsers(true);
     try {
-      const response = await fetch('/api/users/admin/list', {
+      const response = await fetch(`${API_BASE}/api/users/admin/list`, {
         headers: {
           'Authorization': `Bearer ${password}`,
         },
@@ -1571,7 +1578,7 @@ function UsersManager() {
     }
 
     try {
-      const response = await fetch(`/api/users/admin/delete/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/users/admin/delete/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${password}`,
