@@ -40,8 +40,8 @@ router.post('/login', (req, res) => {
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none', // Changed from 'lax' to 'none' to allow cross-site cookies
+      secure: true, // Changed to always require HTTPS for cross-site cookies
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
     });
