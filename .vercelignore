@@ -1,0 +1,7 @@
+frontend/
+frontend/**/*
+*.tsx
+*.jsx
+vite.config.*
+tailwind.config.*
+postcss.config.js
