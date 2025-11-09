@@ -94,7 +94,7 @@ function ProductsEditor() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch('/api/admin/products_by_topic', { credentials: 'include' });
+      const res = await fetch(${API_BASE}/api/admin/products_by_topic', { credentials: 'include' });
       if (!res.ok) throw new Error('Ошибка загрузки');
       const json = (await res.json()) as ProductsByTopic;
       setData(json);
@@ -140,7 +140,7 @@ function ProductsEditor() {
       setSaving(true);
       const errs = validate(data);
       if (Object.keys(errs).length) throw new Error('Исправьте ошибки перед сохранением');
-      const res = await fetch('/api/admin/products_by_topic', {
+      const res = await fetch(${API_BASE}/api/admin/products_by_topic', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -371,7 +371,7 @@ function ArticlesManagerOld() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch('/api/admin/articles', { credentials: 'include' });
+      const res = await fetch(${API_BASE}/api/admin/articles', { credentials: 'include' });
       if (!res.ok) {
         const text = await res.text().catch(()=>'');
         throw new Error(text || 'Ошибка загрузки списка');
@@ -386,7 +386,7 @@ function ArticlesManagerOld() {
       setGroups(groupFiles(data));
       // load titles meta
       try {
-        const mres = await fetch('/api/admin/articles/meta', { credentials: 'include' });
+        const mres = await fetch(${API_BASE}/api/admin/articles/meta', { credentials: 'include' });
         if (mres.ok) {
           const meta = await mres.json();
           setTitles(meta?.titles || {});
@@ -407,12 +407,13 @@ function ArticlesManagerOld() {
     const fd = new FormData();
     fd.append('file', file);
     try {
-      const res = await fetch('/api/admin/articles/upload', { method: 'POST', body: fd, credentials: 'include' });
+      const res = await fetch(${API_BASE}/api/admin/articles/upload', { method: 'POST', body: fd, credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Не удалось загрузить');
       await load();
       if (data.html) {
-        const url = `/api/admin/articles/html?name=${encodeURIComponent(data.html.replace('/articles/',''))}`;
+        const baseUrl = API_BASE?.replace(/\/+$/, '') || '';
+        const url = `${baseUrl}/api/admin/articles/html?name=${encodeURIComponent(data.html.replace('/articles/',''))}`;
         const htmlRes = await fetch(url, { credentials: 'include' });
         const html = await htmlRes.text();
         setPreviewHtml(html);
@@ -522,7 +523,7 @@ function ArticlesManagerOld() {
 
                             // 1) Сохраняем метаданные названия (как и сейчас)
                             const payload = { titles: { ...titles, [oldBase]: newTitle } };
-                            const res = await fetch('/api/admin/articles/meta', {
+                            const res = await fetch(${API_BASE}/api/admin/articles/meta', {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json' },
                               credentials: 'include',
@@ -532,7 +533,7 @@ function ArticlesManagerOld() {
 
                             // 2) Если база изменилась — переименовываем файлы статьи на бэкенде
                             if (newTitle !== oldBase) {
-                              const r = await fetch('/api/admin/articles/rename', {
+                              const r = await fetch(${API_BASE}/api/admin/articles/rename', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
@@ -568,7 +569,7 @@ function ArticlesManagerOld() {
                         try {
                           setSavingTitle(g.base);
                           const payload = { titles: { ...titles, [g.base]: titles[g.base] ?? g.base } };
-                          const res = await fetch('/api/admin/articles/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                          const res = await fetch(${API_BASE}/api/admin/articles/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                           if (!res.ok) throw new Error('Не удалось сохранить название');
                         } catch (e:any) { setError(e?.message || 'Ошибка сохранения названия'); }
                         finally { setSavingTitle(null); }
@@ -614,7 +615,7 @@ function ArticlesManagerOld() {
                       const payload = { titles: { ...titles, [selectedBase!]: next } };
                       try {
                         setSavingTitle(selectedBase!);
-                        await fetch('/api/admin/articles/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                        await fetch(${API_BASE}/api/admin/articles/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                         setTitles(payload.titles);
                       } finally {
                         setSavingTitle(null);
@@ -648,7 +649,7 @@ function TestsManager() {
   type ProductItem = { title: string; linkUrl: string; linkText?: string; category?: string };
   const [productsByTopicForTests, setProductsByTopicForTests] = useState<Record<string, ProductItem[]>>({});
   useEffect(() => {
-    fetch('/api/admin/products_by_topic', { credentials: 'include' })
+    fetch(${API_BASE}/api/admin/products_by_topic', { credentials: 'include' })
       .then(r => r.json()).then((d)=> setProductsByTopicForTests(d || {})).catch(()=>setProductsByTopicForTests({}));
   }, []);
 
@@ -667,7 +668,7 @@ function TestsManager() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch('/api/admin/tests/list', { credentials: 'include' });
+      const res = await fetch(${API_BASE}/api/admin/tests/list', { credentials: 'include' });
       if (!res.ok) throw new Error('Не удалось получить список тестов');
       const data = await res.json();
       setTree(data);
@@ -683,7 +684,7 @@ function TestsManager() {
   useEffect(() => {
     const loadMeta = async () => {
       try {
-        const res = await fetch('/api/admin/tests/meta', { credentials: 'include' });
+        const res = await fetch(${API_BASE}/api/admin/tests/meta', { credentials: 'include' });
         if (!res.ok) return;
         const meta = await res.json();
         setTitles(meta?.titles || {});
@@ -1003,7 +1004,7 @@ function TestsManager() {
                     try {
                       setSavingTitleKey(name);
                       const payload = { titles: { ...titles } };
-                      const res = await fetch('/api/admin/tests/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                      const res = await fetch(${API_BASE}/api/admin/tests/meta', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                       if (!res.ok) throw new Error('Не удалось сохранить отображаемое имя');
                     } catch (e:any) {
                       setError(e?.message || 'Ошибка сохранения названия категории');
@@ -1185,7 +1186,7 @@ function CoursesManager() {
       try {
         setError(null);
         setLoading(true);
-        const res = await fetch('/api/admin/courses', { credentials: 'include' });
+        const res = await fetch(${API_BASE}/api/admin/courses', { credentials: 'include' });
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || 'Не удалось загрузить курсы');
@@ -1324,7 +1325,7 @@ function Overview() {
       try {
         setError(null); setLoading(true);
         // tests
-        const tRes = await fetch('/api/admin/tests/list', { credentials: 'include' });
+        const tRes = await fetch(${API_BASE}/api/admin/tests/list', { credentials: 'include' });
         if (tRes.ok) {
           const tree = await tRes.json();
           const byFolder: Record<string, number> = {};
@@ -1342,7 +1343,7 @@ function Overview() {
           setTests({ totalFiles: total, byFolder });
         }
         // articles - используем meta endpoint для получения данных о статьях
-        const aRes = await fetch('/api/admin/articles/meta', { credentials: 'include' });
+        const aRes = await fetch(${API_BASE}/api/admin/articles/meta', { credentials: 'include' });
         if (aRes.ok) {
           const meta = await aRes.json();
           // meta - это массив статей с информацией о docx и html
@@ -1359,7 +1360,7 @@ function Overview() {
           }
         }
         // products
-        const pRes = await fetch('/api/admin/products_by_topic', { credentials: 'include' });
+        const pRes = await fetch(${API_BASE}/api/admin/products_by_topic', { credentials: 'include' });
         if (pRes.ok) {
           const data = await pRes.json();
           const categories = Object.keys(data || {}).length;
@@ -1701,6 +1702,7 @@ function UsersManager() {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_URL || '';
   const [tab, setTab] = useState<'overview' | 'tests' | 'products' | 'articles' | 'courses' | 'users'>('overview');
 
   useEffect(() => {
