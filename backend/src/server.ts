@@ -144,7 +144,7 @@ app.get('/api/articles', async (_req, res) => {
 });
 
 // Admin endpoints: products_by_topic
-const PRODUCTS_FILE = path.resolve(__dirname, '../../frontend/public/api/products_by_topic.json');
+const PRODUCTS_FILE = path.resolve(__dirname, '../data/products_by_topic.json');
 
 // ===== Admin: Tests =====
 const TESTS_ROOT = path.resolve(__dirname, '../data/tests');
@@ -328,6 +328,17 @@ app.put('/api/admin/products_by_topic', ensureAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: 'Не удалось сохранить файл', details: e?.message });
+  }
+});
+
+// ===== Admin: Courses =====
+app.get('/api/admin/courses', ensureAdmin, async (_req, res) => {
+  try {
+    // Временно возвращаем пустой массив
+    // TODO: реализовать полноценное управление курсами
+    res.json([]);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Ошибка загрузки курсов', details: e?.message });
   }
 });
 
