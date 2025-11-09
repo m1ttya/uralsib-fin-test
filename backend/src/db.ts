@@ -73,7 +73,8 @@ export const query = async (text: string, params?: any[]) => {
       return { rows: [] };
     }
 
-    // Convert SERIAL to AUTOINCREMENT
+    // Convert SERIAL to AUTOINCREMENT (handle NOT NULL)
+    sqliteQuery = sqliteQuery.replace(/SERIAL\s+PRIMARY\s+KEY\s+NOT\s+NULL/g, 'INTEGER PRIMARY KEY AUTOINCREMENT');
     sqliteQuery = sqliteQuery.replace(/SERIAL\s+PRIMARY\s+KEY/g, 'INTEGER PRIMARY KEY AUTOINCREMENT');
 
     // Convert timestamp functions
