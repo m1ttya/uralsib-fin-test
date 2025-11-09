@@ -532,6 +532,13 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 const port = process.env.PORT ? Number(process.env.PORT) : 4001;
-app.listen(port, () => {
-   console.log(`Server listening on http://localhost:${port}`);
-});
+
+// Export app for Vercel
+export default app;
+
+// Start server only if not in serverless environment
+if (process.env.VERCEL !== '1') {
+  app.listen(port, () => {
+     console.log(`Server listening on http://localhost:${port}`);
+  });
+}
