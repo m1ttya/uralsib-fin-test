@@ -2,6 +2,9 @@
   "name": "uralsib-fin-test-backend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "dev": "ts-node src/server.ts",
     "start": "node dist/server.js",
