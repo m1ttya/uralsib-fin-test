@@ -2,20 +2,21 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Копируем package файлы
+# Install dependencies
 COPY package*.json ./
-
-# Устанавливаем зависимости
 RUN npm ci
 
-# Копируем исходный код
-COPY . .
-
-# Собираем TypeScript
+# Build
+COPY tsconfig*.json ./
+COPY src ./src
 RUN npm run build
 
-# Экспортируем порт
-EXPOSE 4001
+# Production
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=0 /app/dist ./dist
+COPY --from=0 /app/node_modules ./node_modules
+COPY package*.json ./
 
-# Запускаем сервер
+EXPOSE 4001
 CMD ["npm", "start"]
