@@ -78,8 +78,8 @@ export const query = async (text: string, params?: any[]) => {
     sqliteQuery = sqliteQuery.replace(/SERIAL\s+PRIMARY\s+KEY/g, 'INTEGER PRIMARY KEY AUTOINCREMENT');
 
     // Convert timestamp functions
-    sqliteQuery = sqliteQuery.replace(/NOW\(\)/g, "datetime('now')");
-    sqliteQuery = sqliteQuery.replace(/CURRENT_TIMESTAMP/g, "datetime('now')");
+    sqliteQuery = sqliteQuery.replace(/NOW\(\)/g, "CURRENT_TIMESTAMP");
+    sqliteQuery = sqliteQuery.replace(/CURRENT_TIMESTAMP/g, "CURRENT_TIMESTAMP");
 
     // Execute query
     if (sqliteQuery.trim().toUpperCase().startsWith('SELECT')) {
