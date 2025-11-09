@@ -520,7 +520,28 @@ app.delete('/api/admin/articles/:name', ensureAdmin, async (req, res) => {
     res.status(500).json({ error: 'Не удалось удалить файл', details: e?.message });
   }
 });
-   
+
+// ===== Public: Courses =====
+app.get('/api/courses', async (_req, res) => {
+  try {
+    // Временно возвращаем пустой массив
+    // TODO: реализовать курсы
+    res.json([]);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Ошибка загрузки курсов', details: e?.message });
+  }
+});
+
+app.get('/api/courses/:id', async (req, res) => {
+  try {
+    // Временно возвращаем ошибку "не найдено"
+    // TODO: реализовать курсы
+    res.status(404).json({ error: 'Курс не найден' });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Ошибка загрузки курса', details: e?.message });
+  }
+});
+
 // Serve frontend only in development
 if (process.env.NODE_ENV !== 'production') {
   // Serve Vite build or dev preview from frontend/dist or frontend directory
