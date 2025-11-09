@@ -8,8 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
-const ACCESS_TOKEN_EXPIRES_IN = parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN || '1800');
-const REFRESH_TOKEN_EXPIRES_IN = parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN || '604800');
+const ACCESS_TOKEN_EXPIRES_IN = parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN || '1800') || 1800;
+const REFRESH_TOKEN_EXPIRES_IN = parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN || '604800') || 604800;
 
 interface RegisterData {
   email: string;
