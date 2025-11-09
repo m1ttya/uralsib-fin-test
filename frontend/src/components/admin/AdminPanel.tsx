@@ -1348,22 +1348,29 @@ function Overview() {
           walk(tree);
           setTests({ totalFiles: total, byFolder });
         }
-        // articles - используем meta endpoint для получения данных о статьях
-        const aRes = await fetch(`${API_BASE}/api/admin/articles/meta`, { credentials: 'include' });
+        // articles - получаем список файлов и группируем
+        const aRes = await fetch(`${API_BASE}/api/admin/articles`, { credentials: 'include' });
         if (aRes.ok) {
-          const meta = await aRes.json();
-          // meta - это массив статей с информацией о docx и html
-          if (Array.isArray(meta)) {
-            let docx = 0, html = 0, missingHtml = 0;
-            meta.forEach((article: any) => {
-              if (article.hasDocx) docx++;
-              if (article.hasHtml) html++;
-              if (article.hasDocx && !article.hasHtml) missingHtml++;
-            });
-            setArticles({ groups: meta.length, docx, html, missingHtml });
-          } else {
-            setArticles({ groups: 0, docx: 0, html: 0, missingHtml: 0 });
+          const files: { name: string; size: number; mtime: number }[] = await aRes.json();
+          // Группируем файлы по базовому имени
+          const groups: Record<string, { docx?: boolean; html?: boolean }> = {};
+          for (const f of files) {
+            const m = f.name.match(/^(.*?)(\.(docx|html?))$/i);
+            const base = m ? m[1] : f.name;
+            const ext = m ? m[3].toLowerCase() : '';
+            if (!groups[base]) groups[base] = {};
+            if (ext === 'docx') groups[base].docx = true;
+            if (ext === 'html' || ext === 'htm') groups[base].html = true;
           }
+          // Подсчитываем статистику
+          let groupsCount = 0, docx = 0, html = 0, missingHtml = 0;
+          for (const base in groups) {
+            groupsCount++;
+            if (groups[base].docx) docx++;
+            if (groups[base].html) html++;
+            if (groups[base].docx && !groups[base].html) missingHtml++;
+          }
+          setArticles({ groups: groupsCount, docx, html, missingHtml });
         }
         // products
         const pRes = await fetch(`${API_BASE}/api/admin/products_by_topic`, { credentials: 'include' });
